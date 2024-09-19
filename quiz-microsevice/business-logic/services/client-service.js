@@ -28,14 +28,44 @@ const createOne = async (name) => {
   return { clientId, clientSecret };
 };
 
+
+
+const regenerateClientCredentials = async(id) => {
+
+  const newClientId = crypto.randomBytes(20).toString('hex');
+  const newClientSecret = crypto.randomBytes(20).toString('hex');
+
+  const newClientSecretHash = bcrypt.hashSync(newClientSecret, bcrypt.genSaltSync());
+
+  await clientRepository.regenerateClientCredentials(id, newClientId, newClientSecretHash);
+
+  return {newClientId, newClientSecret};
+}
+
+
 const retrieveOneByClientId = async (clientId) => {
   const client = await clientRepository.retrieveOneByClientId(clientId);
 
   if (!client) {
+    // console.log('hello')
     throw new NotExistError("There is no client with this clientId.");
   }
 
   return client;
 };
 
-module.exports = { createOne, retrieveOneByClientId };
+const retrieveAllClients = async() => {
+  const clients = await clientRepository.retrieveAllClients();
+  if(!clients){
+    throw new NotExistError("There is no clients.")
+  }
+  return clients;
+};
+
+
+module.exports = { 
+  createOne, 
+  retrieveOneByClientId, 
+  retrieveAllClients, 
+  regenerateClientCredentials
+};
