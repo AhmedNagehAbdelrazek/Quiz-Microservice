@@ -46,7 +46,7 @@ const generateToken = async (grantType, clientId, clientSecret) => {
   }
 
   return jwt.sign({ clientId }, JWT_SECRET, {
-    expiresIn: ACCESS_TOKEN_EXPIRY,
+    expiresIn: ACCESS_TOKEN_EXPIRY || '1h'
   });
 };
 
