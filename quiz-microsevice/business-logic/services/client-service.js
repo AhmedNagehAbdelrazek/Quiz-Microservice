@@ -28,21 +28,28 @@ const createOne = async (name) => {
   return { clientId, clientSecret };
 };
 
+const regenerateClientCredentials = async (id) => {
+  if (!validator.isMongoId(id)) {
+    throw new ValidationError("Invalid id. It must be a valid MongoId.");
+  }
 
+  const clientId = crypto.randomBytes(20).toString("hex");
+  const clientSecret = crypto.randomBytes(20).toString("hex");
 
-const regenerateClientCredentials = async(id) => {
+  const clientSecretHash = bcrypt.hashSync(clientSecret, bcrypt.genSaltSync());
 
-  const newClientId = crypto.randomBytes(20).toString('hex');
-  const newClientSecret = crypto.randomBytes(20).toString('hex');
+  const client = await clientRepository.updateClientCredentials(
+    id,
+    clientId,
+    clientSecretHash
+  );
 
-  const newClientSecretHash = bcrypt.hashSync(newClientSecret, bcrypt.genSaltSync());
+  if (!client) {
+    throw new NotExistError("There is no client with this id.");
+  }
 
-  await clientRepository.regenerateClientCredentials(id, newClientId, newClientSecretHash);
-
-  return {newClientId, newClientSecret};
-}
-
-
+  return { clientId, clientSecret };
+};
 
 const retrieveOneByClientId = async (clientId) => {
   const client = await clientRepository.retrieveOneByClientId(clientId);
@@ -54,16 +61,15 @@ const retrieveOneByClientId = async (clientId) => {
   return client;
 };
 
-const retrieveAllClients = async() => {
+const retrieveAllClients = async () => {
   const clients = await clientRepository.retrieveAllClients();
-  
-  return clients;
+
+  return clients.map(({ id, name, clientId }) => ({ id, name, clientId }));
 };
 
-
-module.exports = { 
-  createOne, 
-  retrieveOneByClientId, 
-  retrieveAllClients, 
-  regenerateClientCredentials
+module.exports = {
+  createOne,
+  retrieveOneByClientId,
+  retrieveAllClients,
+  regenerateClientCredentials,
 };
