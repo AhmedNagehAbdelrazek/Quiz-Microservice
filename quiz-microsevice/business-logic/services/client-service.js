@@ -43,11 +43,11 @@ const regenerateClientCredentials = async(id) => {
 }
 
 
+
 const retrieveOneByClientId = async (clientId) => {
   const client = await clientRepository.retrieveOneByClientId(clientId);
 
   if (!client) {
-    // console.log('hello')
     throw new NotExistError("There is no client with this clientId.");
   }
 
@@ -56,9 +56,7 @@ const retrieveOneByClientId = async (clientId) => {
 
 const retrieveAllClients = async() => {
   const clients = await clientRepository.retrieveAllClients();
-  if(!clients){
-    throw new NotExistError("There is no clients.")
-  }
+  
   return clients;
 };
 

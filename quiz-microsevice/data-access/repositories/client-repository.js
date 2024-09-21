@@ -22,25 +22,21 @@ const retrieveAllClients = async () => {
   
   const clients = await Client.find().select('-clientSecretHash');
   
-  return clients.length > 0 ? clients : [];
+  return clients.map(toDTO);
   
   
 };
 
-/* 
-Here I make GET request to get ObjectID, not clientId.
-So I'm using (findById) method, not findOne.
-*/
+
 const regenerateClientCredentials = async(id, clientId, clientSecretHash) => {
   const client = await Client.findById(id);
   if(!client){
-    // console.log('hello')
-    throw new NotExistError("There is no client with this ObjectID.");
+    return null;
   };
-  const regenerateClient = await Client.updateOne( { _id: id }, { clientId, clientSecretHash } );
-  const updatedClient = await Client.findById(id);
+  const regenerateClient = await Client.updateOne( { _id: id }, { clientId, clientSecretHash }, {new: true} );
+  
 
-  return toDTO(updatedClient);
+  return toDTO(regenerateClient);
 };
 
 
