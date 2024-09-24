@@ -3,7 +3,6 @@ const { ValidationError } = require("../../business-logic/errors/common");
 const {
   UnsupportedGrantTypeError,
   InvalidClientError,
-  DisabledClientError,
 } = require("../../business-logic/errors/oauth");
 
 const ACCESS_TOKEN_EXPIRY = parseInt(process.env.ACCESS_TOKEN_EXPIRY, 10);
@@ -43,12 +42,6 @@ const generateToken = async (req, res) => {
     if (e instanceof InvalidClientError) {
       statusCode = 401;
       error = "invalid_client";
-      error_description = e.message;
-    }
-
-    if (e instanceof DisabledClientError) {
-      statusCode = 401;
-      error = "unsupported_disabled_client";
       error_description = e.message;
     }
 

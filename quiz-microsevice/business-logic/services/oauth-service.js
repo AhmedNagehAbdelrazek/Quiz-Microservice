@@ -6,7 +6,6 @@ const { ValidationError } = require("../errors/common");
 const {
   UnsupportedGrantTypeError,
   InvalidClientError,
-  DisabledClientError,
 } = require("../errors/oauth");
 
 const { clientRepository } = require("../../data-access/repositories");
@@ -41,7 +40,7 @@ const generateToken = async (grantType, clientId, clientSecret) => {
   const client = await clientRepository.retrieveOneByClientId(clientId);
 
   if(client && client.isEnabled === false){
-    throw new DisabledClientError(
+    throw new InvalidClientError(
       "Client is disabled. Cannot be authenticated."
     );
   };

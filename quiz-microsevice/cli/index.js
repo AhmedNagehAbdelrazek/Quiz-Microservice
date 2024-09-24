@@ -23,35 +23,40 @@ cli
 
     try {
       switch (command) {
-        case "create-client":
+        case "create-client":{
           const [name] = args;
-
           await createClient(name);
           break;
-        case 'regenerate-client-credentials':
+        }
+
+        case 'regenerate-client-credentials':{
           const [id] = args;
           await regenerateClientCredentials(id)
           break;
+        }
           
-        case "list-clients":
+        case "list-clients":{
           await retrieveAllClients();
           break;
+        }
 
-// I've changed the vars name (ID, Id) because these vars is locally, so it's make conflict.
-        case "rename-client":
-          const [ID, newName] = args;
-          await renameClient(ID, newName);
+        case "rename-client":{
+          const [id, name] = args;
+          await renameClient(id, name);
           break;
+        }
 
-        case "disable-client":
-          const [Id] = args;
-          await disableClient(Id);
+        case "disable-client":{
+          const [id] = args;
+          await disableClient(id);
           break;
+        }
 
-        case "enable-client":
-          const [iD] = args;
-          await enableClient(iD);
+        case "enable-client":{
+          const [id] = args;
+          await enableClient(id);
           break;
+        }
 
         case "exit":
         case "quit":
