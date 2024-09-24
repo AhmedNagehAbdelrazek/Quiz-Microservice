@@ -57,19 +57,63 @@ const retrieveOneByClientId = async (clientId) => {
   if (!client) {
     throw new NotExistError("There is no client with this clientId.");
   }
-
+  
   return client;
 };
 
 const retrieveAllClients = async () => {
   const clients = await clientRepository.retrieveAllClients();
-
+  
   return clients.map(({ id, name, clientId }) => ({ id, name, clientId }));
 };
+
+const renameClient = async(id, name) => {
+  const client = await clientRepository.renameClient(id, name);
+  if (!client) {
+    throw new NotExistError("There is no client with this id.");
+  };
+  return {
+    id: client.id, 
+    name: client.name, 
+    clientId: client.clientId
+  }
+};
+
+const disableClient = async(id) => {
+  const client = await clientRepository.disableClient(id);
+  if (!client) {
+    throw new NotExistError("There is no client with this id.");
+  };
+  return {
+    id: client.id, 
+    name: client.name, 
+    clientId: client.clientId,
+    isEnabled: client.isEnabled,
+  }
+}
+
+
+const enableClient = async(id) => {
+  const client = await clientRepository.enableClient(id);
+  if (!client) {
+    throw new NotExistError("There is no client with this id.");
+  };
+  return {
+    id: client.id, 
+    name: client.name, 
+    clientId: client.clientId,
+    isEnabled: client.isEnabled,
+  }
+}
+
+
 
 module.exports = {
   createOne,
   retrieveOneByClientId,
   retrieveAllClients,
   regenerateClientCredentials,
+  renameClient,
+  disableClient,
+  enableClient,
 };
