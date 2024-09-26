@@ -1,6 +1,6 @@
 const { getModelsForClient } = require("../models");
 
-const toDTO = ({ _id, quiz, type, text, options, answer, partialCredit }) => {
+const toDTO = ({ _id, quiz, type, text, options, answer, points }) => {
   return {
     id: _id.toString(),
     quizId: quiz.toString(),
@@ -8,7 +8,7 @@ const toDTO = ({ _id, quiz, type, text, options, answer, partialCredit }) => {
     text,
     options,
     answer,
-    partialCredit,
+    points,
   };
 };
 
@@ -18,8 +18,7 @@ const createQuestion = async (
   type,
   text,
   options,
-  answer,
-  partialCredit
+  answer
 ) => {
   const { Question } = getModelsForClient(clientId);
 
@@ -29,10 +28,15 @@ const createQuestion = async (
     text,
     options,
     answer,
-    partialCredit,
   });
 
   return toDTO(question);
 };
 
-module.exports = { createQuestion };
+const deleteQuestion = async (clientId, id) => {
+  const { Question } = getModelsForClient(clientId);
+
+  await Question.findOneAndDelete({ _id: id });
+};
+
+module.exports = { createQuestion, deleteQuestion };

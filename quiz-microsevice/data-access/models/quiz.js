@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const { DifficultyTypes, GradingTypes } = require("../../business-logic/enums");
+const { DifficultyTypes } = require("../../business-logic/enums");
 
 const generateQuizModelForClient = (id) => {
   const quizSchema = new mongoose.Schema(
@@ -34,11 +34,6 @@ const generateQuizModelForClient = (id) => {
       passingScore: {
         type: Number,
         default: 50,
-      },
-      gradingType: {
-        type: String,
-        enum: Object.values(GradingTypes),
-        default: GradingTypes.MANUAL,
       },
       isPublished: {
         type: Boolean,

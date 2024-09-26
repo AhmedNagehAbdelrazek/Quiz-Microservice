@@ -31,10 +31,6 @@ const generateQuestionModelForClient = (id) => {
         type: Number,
         default: 1,
       },
-      partialCredit: {
-        type: Boolean,
-        default: true,
-      },
     },
     { timestamps: true }
   );
