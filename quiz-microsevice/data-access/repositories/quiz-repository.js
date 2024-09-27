@@ -61,4 +61,17 @@ const deleteQuiz = async (clientId, id) => {
   await Quiz.findOneAndDelete({ _id: id });
 };
 
-module.exports = { createQuiz, deleteQuiz };
+const retrieveQuizzes = async (clientId) => {
+
+  const { Quiz, Question} = getModelsForClient(clientId);
+  
+  const quizzes = await Quiz.find();
+  const questions = await Question.find(); 
+
+  return { quizzes, questions }; 
+
+}
+
+
+module.exports = { createQuiz, deleteQuiz, retrieveQuizzes };
+

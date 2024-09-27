@@ -34,37 +34,25 @@ const validateText = (text) => {
 };
 
 const validateOptions = (type, options) => {
-  if (type === QuestionsTypes.SHORT_ANSWER && options !== null) {
-    throw new ValidationError(
-      "Invalid question options, Short-Answer questions must have null options."
-    );
-  }
+  
+    if (
+      (type === QuestionsTypes.SHORT_ANSWER || type === QuestionsTypes.FILL_IN_THE_BLANK) && 
+      options !== null
+    ) {
+      throw new ValidationError(
+        "Invalid question options, Short-Answer and Fill-in-the-Blank questions must have null options."
+      );
+    }
 
-  if (type === QuestionsTypes.FILL_IN_THE_BLANK && options !== null) {
-    throw new ValidationError(
-      "Invalid question options, Fill-in-the-Blank questions must have null options."
-    );
-  }
+    if (
+      (type !== QuestionsTypes.SHORT_ANSWER && type !== QuestionsTypes.FILL_IN_THE_BLANK) &&
+      (!Array.isArray(options) || !options.every(validator.isAlpha))
+    ) {
+      throw new ValidationError(
+        "Invalid question options, It must be an array of alphabetic strings."
+      );
+    }
 
-  if (
-    type === QuestionsTypes.TRUE_FALSE &&
-    (!Array.isArray(options) ||
-      options.length !== 2 ||
-      !options.every((opt) => TRUE_FALSE_OPTIONS.includes(opt)))
-  ) {
-    throw new ValidationError(
-      'Invalid question options, True/False questions must have options ["true", "false"].'
-    );
-  }
-
-  if (
-    type !== QuestionsTypes.TRUE_FALSE &&
-    (!Array.isArray(options) || !options.every(validator.isAlpha))
-  ) {
-    throw new ValidationError(
-      "Invalid question options, It must be an array of alphabetic strings."
-    );
-  }
 };
 
 const validateAnswer = (type, answer) => {
