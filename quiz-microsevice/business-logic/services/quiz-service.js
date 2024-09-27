@@ -196,37 +196,9 @@ const createQuiz = async (
   return { ...quiz, questions: questionsWithoutQuizId };
 };
 
-const retrieveQuizzes = async (clientId) => {  
-  const { quizzes, questions } = await quizRepository.retrieveQuizzes(clientId);  
 
-  if (!Array.isArray(quizzes)) {  
-      throw new Error('Quizzes is not an array');  
-  }  
-  
-  const quizzesWithQuestions = quizzes.map(quiz => {  
-      const quizData = quiz;  
-      return {  
-          _id: quizData._id,  
-          title: quizData.title,  
-          description: quizData.description,  
-          categories: quizData.categories,  
-          difficulty: quizData.difficulty,  
-          timeLimit: quizData.timeLimit,  
-          attemptLimit: quizData.attemptLimit,  
-          dueDate: quizData.dueDate,  
-          passingScore: quizData.passingScore,  
-          isPublished: quizData.isPublished,  
-          createdAt: quizData.createdAt,  
-          updatedAt: quizData.updatedAt,  
-          questions: questions
-      };  
-  });  
-
-  return {  
-      success: true,  
-      quizzes: quizzesWithQuestions
-  };  
+const retrieveSpecificQuiz = async (client, quizId) => {
+  const quiz  = await quizRepository.retrieveSpecificQuiz(client, quizId);
+  return quiz;
 };
-
-
-module.exports = { createQuiz, retrieveQuizzes };
+module.exports = { createQuiz, retrieveSpecificQuiz };

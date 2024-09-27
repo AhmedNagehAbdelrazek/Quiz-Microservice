@@ -61,17 +61,13 @@ const deleteQuiz = async (clientId, id) => {
   await Quiz.findOneAndDelete({ _id: id });
 };
 
-const retrieveQuizzes = async (clientId) => {
-
-  const { Quiz, Question} = getModelsForClient(clientId);
+const retrieveSpecificQuiz = async (client, quizId) => {
+  const { Quiz } = getModelsForClient(client);
   
-  const quizzes = await Quiz.find();
-  const questions = await Question.find(); 
+  const quiz = await Quiz.findById(quizId);
+   
+  return toDTO(quiz);
+};
 
-  return { quizzes, questions }; 
-
-}
-
-
-module.exports = { createQuiz, deleteQuiz, retrieveQuizzes };
+module.exports = { createQuiz, deleteQuiz, retrieveSpecificQuiz };
 

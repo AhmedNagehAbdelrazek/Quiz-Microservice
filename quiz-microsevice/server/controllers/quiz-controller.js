@@ -56,36 +56,39 @@ const createQuiz = async (req, res) => {
   }
 };
 
-const retrieveQuizzes = async (req, res) => {
-  try {
 
+const retrieveSpecificQuiz = async (req, res) => {
+  try {
     const client = req.client;
-    const quizzes = await quizService.retrieveQuizzes(client.id)
+    
+    
+    const quiz = await quizService.retrieveSpecificQuiz(client.id, req.params.quizId)
     
     return res.status(200).json({
-      success: true, 
-      quizzes: quizzes
+      success: true,
+      data: {
+        quiz: quiz
+      },
     });
-
-
-  }catch (e) {
+  } catch (e) {
     let statusCode = 500;
     let message = "An unexpected error occurred on the server.";
-
+    
     if (e instanceof ValidationError) {
       statusCode = 400;
       message = e.message;
     }
-
+    
     if (statusCode === 500) {
       console.error(e);
     }
-
+    
     res.status(statusCode).json({
       success: false,
       message,
     });
   }
-}
+};
 
-module.exports = { createQuiz, retrieveQuizzes};
+
+module.exports = { createQuiz, retrieveSpecificQuiz};
