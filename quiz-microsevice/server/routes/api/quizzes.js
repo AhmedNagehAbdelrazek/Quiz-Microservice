@@ -4,7 +4,9 @@ const router = Router();
 
 const { quizController } = require("../../controllers");
 
-router.post("/", quizController.createQuiz);
-router.get("/", quizController.retrieveQuizzes);
+router
+  .route("/")
+  .post(quizController.createQuiz)
+  .get(quizController.retrieveQuizzes);
 
 module.exports = router;

@@ -158,43 +158,28 @@ const createQuiz = async (
   return { ...quiz, questions: questionsWithoutQuizId };
 };
 
-const retrieveQuizzes = async (clientId) => {
-  const { quizzes, questions } = await quizRepository.retrieveQuizzes(clientId);
+const retrieveQuizzes = async (clientId, page, limit) => {
+  const quizzes = await quizRepository.retrieveQuizzes(
+    clientId,
+    (page - 1) * limit,
+    limit
+  );
 
-  if (!Array.isArray(quizzes)) {
-    throw new Error("Quizzes is not an array");
-  }
-
-  const quizzesWithQuestions = quizzes.map((quiz) => {
-    const quizData = quiz;
-    return {
-      _id: quizData._id,
-      title: quizData.title,
-      description: quizData.description,
-      categories: quizData.categories,
-      difficulty: quizData.difficulty,
-      timeLimit: quizData.timeLimit,
-      attemptLimit: quizData.attemptLimit,
-      dueDate: quizData.dueDate,
-      passingScore: quizData.passingScore,
-      isPublished: quizData.isPublished,
-      createdAt: quizData.createdAt,
-      updatedAt: quizData.updatedAt,
-      questions: questions,
-    };
-  });
+  const totalCount = await quizRepository.countQuizzes(clientId);
+  const totalPages = Math.ceil(totalCount / limit);
 
   return {
-    success: true,
-    quizzes: quizzesWithQuestions,
+    quizzes,
+    pagination: {
+      page,
+      totalPages,
+    },
   };
 };
-
-module.exports = { createQuiz, retrieveQuizzes };
 
 const deleteQuizWithQuestions = async (clientId, quizId) => {
   await quizRepository.deleteQuiz(clientId, quizId);
   await questionService.deleteQuestionsForQuiz(clientId, quizId);
 };
 
-module.exports = { createQuiz };
+module.exports = { createQuiz, retrieveQuizzes };

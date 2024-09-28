@@ -53,13 +53,18 @@ const createQuiz = async (
   return toDTO(quiz);
 };
 
-const retrieveQuizzes = async (clientId) => {
-  const { Quiz, Question } = getModelsForClient(clientId);
+const retrieveQuizzes = async (clientId, skip, limit) => {
+  const { Quiz } = getModelsForClient(clientId);
 
-  const quizzes = await Quiz.find();
-  const questions = await Question.find();
+  const quizzes = await Quiz.find({}).skip(skip).limit(limit);
 
-  return { quizzes, questions };
+  return quizzes.map(toDTO);
+};
+
+const countQuizzes = (clientId) => {
+  const { Quiz } = getModelsForClient(clientId);
+
+  return Quiz.countDocuments({});
 };
 
 const deleteQuiz = async (clientId, quizId) => {
@@ -68,4 +73,4 @@ const deleteQuiz = async (clientId, quizId) => {
   await Quiz.findOneAndDelete({ _id: quizId });
 };
 
-module.exports = { createQuiz, retrieveQuizzes, deleteQuiz };
+module.exports = { createQuiz, retrieveQuizzes, countQuizzes, deleteQuiz };

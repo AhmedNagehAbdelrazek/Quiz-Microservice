@@ -37,36 +37,25 @@ const createQuiz = asyncHandler(async (req, res) => {
   });
 });
 
-const retrieveQuizzes = async (req, res) => {
-  try {
+const retrieveQuizzes = asyncHandler(async (req, res) => {
+  const client = req.client;
+  const { page = 1, limit = 20 } = req.query;
 
-    const client = req.client;
-    const quizzes = await quizService.retrieveQuizzes(client.id)
-    
-    return res.status(200).json({
-      success: true, 
-      quizzes: quizzes
-    });
+  const { quizzes, pagination } = await quizService.retrieveQuizzes(
+    client.id,
+    page,
+    limit
+  );
 
+  return res.status(200).json({
+    success: true,
+    data: {
+      quizzes,
+    },
+    metadata: {
+      pagination,
+    },
+  });
+});
 
-  }catch (e) {
-    let statusCode = 500;
-    let message = "An unexpected error occurred on the server.";
-
-    if (e instanceof ValidationError) {
-      statusCode = 400;
-      message = e.message;
-    }
-
-    if (statusCode === 500) {
-      console.error(e);
-    }
-
-    res.status(statusCode).json({
-      success: false,
-      message,
-    });
-  }
-}
-
-module.exports = { createQuiz, retrieveQuizzes};
+module.exports = { createQuiz, retrieveQuizzes };
