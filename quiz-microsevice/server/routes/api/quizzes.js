@@ -9,6 +9,8 @@ router
   .post(quizController.createQuiz)
   .get(quizController.retrieveQuizzes);
 
-router.route("/:quizId").get(quizController.retrieveSpecificQuiz);
+router.route("/:quizId").get(quizController.retrieveQuiz);
+
+router.route("/:quizId/publish").post(quizController.publishQuiz);
 
 module.exports = router;
