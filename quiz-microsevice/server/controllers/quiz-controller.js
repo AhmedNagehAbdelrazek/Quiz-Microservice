@@ -58,7 +58,7 @@ const retrieveQuizzes = asyncHandler(async (req, res) => {
   });
 });
 
-const retrieveSpecificQuiz = asyncHandler(async (req, res) => {
+const retrieveQuiz = asyncHandler(async (req, res) => {
   const client = req.client;
 
   const quiz = await quizService.retrieveSpecificQuiz(
@@ -74,4 +74,18 @@ const retrieveSpecificQuiz = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { createQuiz, retrieveQuizzes, retrieveSpecificQuiz };
+const publishQuiz = asyncHandler(async (req, res) => {
+  const client = req.client;
+  const { quizId } = req.params;
+
+  const quiz = await quizService.publishQuiz(client.id, quizId);
+
+  return res.status(200).json({
+    success: true,
+    data: {
+      quiz: quiz,
+    },
+  });
+});
+
+module.exports = { createQuiz, retrieveQuizzes, retrieveQuiz, publishQuiz };

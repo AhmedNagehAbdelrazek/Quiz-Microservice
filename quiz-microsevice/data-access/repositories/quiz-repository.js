@@ -67,10 +67,28 @@ const countQuizzes = (clientId) => {
   return Quiz.countDocuments({});
 };
 
-const retrieveSpecificQuiz = async (clientId, quizId) => {
+const retrieveQuiz = async (clientId, quizId) => {
   const { Quiz } = getModelsForClient(clientId);
 
   const quiz = await Quiz.findById(quizId);
+
+  if (!quiz) {
+    return null;
+  }
+
+  return toDTO(quiz);
+};
+
+const updateQuiz = async (clientId, quizId, update) => {
+  const { Quiz } = getModelsForClient(clientId);
+
+  const quiz = await Quiz.findOneAndUpdate({ _id: quizId }, update, {
+    new: true,
+  });
+
+  if (!quiz) {
+    return null;
+  }
 
   return toDTO(quiz);
 };
@@ -85,6 +103,7 @@ module.exports = {
   createQuiz,
   retrieveQuizzes,
   countQuizzes,
-  retrieveSpecificQuiz,
+  retrieveQuiz,
+  updateQuiz,
   deleteQuiz,
 };

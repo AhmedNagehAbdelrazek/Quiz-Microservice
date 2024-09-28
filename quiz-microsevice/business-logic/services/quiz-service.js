@@ -1,7 +1,8 @@
 const validator = require("validator");
 
 const { DifficultyTypes } = require("../enums");
-const { ValidationError } = require("../errors/common");
+const { ValidationError, NotExistError } = require("../errors/common");
+const { QuizAlreadyPublishedError } = require("../errors/quiz");
 const questionService = require("../services/question-service");
 
 const { quizRepository } = require("../../data-access/repositories");
@@ -200,17 +201,43 @@ const retrieveQuizzes = async (clientId, page, limit) => {
   };
 };
 
-const retrieveSpecificQuiz = async (clientId, quizId) => {
+const retrieveQuiz = async (clientId, quizId) => {
   validatId(clientId, "Invalid clientId, It must be a valid MongoId.");
   validatId(quizId, "Invalid quizId, It must be a valid MongoId.");
 
-  const quiz = await quizRepository.retrieveSpecificQuiz(clientId, quizId);
+  const quiz = await quizRepository.retrieveQuiz(clientId, quizId);
+
+  if (!quiz) {
+    throw new NotExistError("There is no quiz with this id.");
+  }
+
   const questions = await questionService.retrieveQuestionsForQuiz(
     clientId,
     quizId
   );
 
   return { ...quiz, questions };
+};
+
+const publishQuiz = async (clientId, quizId) => {
+  validatId(clientId, "Invalid clientId, It must be a valid MongoId.");
+  validatId(quizId, "Invalid quizId, It must be a valid MongoId.");
+
+  let quiz = await quizRepository.retrieveQuiz(clientId, quizId);
+
+  if (!quiz) {
+    throw new NotExistError("There is no quiz with this id.");
+  }
+
+  if (quiz.isPublished) {
+    throw new QuizAlreadyPublishedError();
+  }
+
+  quiz = await quizRepository.updateQuiz(clientId, quizId, {
+    isPublished: true,
+  });
+
+  return quiz;
 };
 
 const deleteQuizWithQuestions = async (clientId, quizId) => {
@@ -221,4 +248,9 @@ const deleteQuizWithQuestions = async (clientId, quizId) => {
   await questionService.deleteQuestionsForQuiz(clientId, quizId);
 };
 
-module.exports = { createQuiz, retrieveQuizzes, retrieveSpecificQuiz };
+module.exports = {
+  createQuiz,
+  retrieveQuizzes,
+  retrieveQuiz,
+  publishQuiz,
+};
