@@ -35,8 +35,7 @@ const createQuiz = async (
   timeLimit,
   attemptLimit,
   dueDate,
-  passingScore,
-  isPublished
+  passingScore
 ) => {
   const { Quiz } = getModelsForClient(clientId);
 
@@ -49,16 +48,15 @@ const createQuiz = async (
     attemptLimit,
     dueDate,
     passingScore,
-    isPublished,
   });
 
   return toDTO(quiz);
 };
 
-const deleteQuiz = async (clientId, id) => {
+const deleteQuiz = async (clientId, quizId) => {
   const { Quiz } = getModelsForClient(clientId);
 
-  await Quiz.findOneAndDelete({ _id: id });
+  await Quiz.findOneAndDelete({ _id: quizId });
 };
 
 module.exports = { createQuiz, deleteQuiz };

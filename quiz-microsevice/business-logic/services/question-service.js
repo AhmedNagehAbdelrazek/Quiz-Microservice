@@ -1,94 +1,70 @@
-const { QuestionsTypes } = require("../enums");
-const { ValidationError } = require("../errors/common");
-const { questionRepository } = require("../../data-access/repositories");
 const validator = require("validator");
 
-const MIN_TEXT_LENGTH = 10;
-const MAX_TEXT_LENGTH = 500;
-const MIN_ANSWER_LENGTH = 1;
-const MAX_ANSWER_LENGTH = 200;
-const TRUE_FALSE_OPTIONS = ["true", "false"];
+const { QuestionsTypes } = require("../enums");
+const { ValidationError } = require("../errors/common");
 
-// Validation Functions
+const { questionRepository } = require("../../data-access/repositories");
+
 const validateType = (type) => {
   if (!Object.values(QuestionsTypes).includes(type)) {
-    throw new ValidationError("Invalid question type.");
+    throw new ValidationError("Invalid type.");
   }
 };
 
 const validateText = (text) => {
   if (typeof text !== "string") {
-    throw new ValidationError(`Invalid question text, It must be  string.`);
+    throw new ValidationError("Invalid text, It must be  string.");
   }
 
-  if (
-    !validator.isLength(text.trim(), {
-      min: MIN_TEXT_LENGTH,
-      max: MAX_TEXT_LENGTH,
-    })
-  ) {
+  if (!validator.isLength(text, { min: 1, max: 1024 })) {
     throw new ValidationError(
-      `Invalid question text, It must be between ${MIN_TEXT_LENGTH} and ${MAX_TEXT_LENGTH} characters.`
+      "Invalid text, It must be between 1 and 1024 characters."
     );
   }
 };
 
 const validateOptions = (type, options) => {
-  if (type === QuestionsTypes.SHORT_ANSWER && options !== null) {
-    throw new ValidationError(
-      "Invalid question options, Short-Answer questions must have null options."
-    );
+  if (type === QuestionsTypes.MILTIPLE_CHOICE) {
+    if (
+      !Array.isArray(options) ||
+      !options.every((option) => typeof option === "string")
+    ) {
+      throw new ValidationError(
+        "Invalid options, It must be an array of strings for Multiple-Choice questions."
+      );
+    }
   }
 
-  if (type === QuestionsTypes.FILL_IN_THE_BLANK && options !== null) {
+  if (options !== null) {
     throw new ValidationError(
-      "Invalid question options, Fill-in-the-Blank questions must have null options."
-    );
-  }
-
-  if (
-    type === QuestionsTypes.TRUE_FALSE &&
-    (!Array.isArray(options) ||
-      options.length !== 2 ||
-      !options.every((opt) => TRUE_FALSE_OPTIONS.includes(opt)))
-  ) {
-    throw new ValidationError(
-      'Invalid question options, True/False questions must have options ["true", "false"].'
-    );
-  }
-
-  if (
-    type !== QuestionsTypes.TRUE_FALSE &&
-    (!Array.isArray(options) || !options.every(validator.isAlpha))
-  ) {
-    throw new ValidationError(
-      "Invalid question options, It must be an array of alphabetic strings."
+      "Invalid options, It must be null for question types other than Multiple-Choice."
     );
   }
 };
 
-const validateAnswer = (type, answer) => {
-  if (typeof answer !== "string") {
-    throw new ValidationError(`Invalid answer text, It must be  string.`);
-  }
-
-  if (
-    !validator.isLength(answer.trim(), {
-      min: MIN_ANSWER_LENGTH,
-      max: MAX_ANSWER_LENGTH,
-    })
-  ) {
+const validateAnswer = (type, options, answer) => {
+  if (type === QuestionsTypes.MULTIPLE_CHOICE && !options.includes(answer)) {
     throw new ValidationError(
-      `Invalid question answer, It must be between ${MIN_ANSWER_LENGTH} and ${MAX_ANSWER_LENGTH} characters.`
+      "Invalid answer, it must be one of the provided options."
     );
   }
 
   if (
     type === QuestionsTypes.TRUE_FALSE &&
-    !TRUE_FALSE_OPTIONS.includes(answer)
+    !["true", "false"].includes(answer)
   ) {
     throw new ValidationError(
-      'Invalid question answer, True/False questions must have an answer of "true" or "false".'
+      "Invalid answer, it must be either 'true' or 'false'."
+    );
+  }
+
+  if (typeof answer !== "string") {
+    throw new ValidationError("Invalid answer, it must be a string.");
+  }
+
+  if (!validator.isLength(answer, { min: 1, max: 1024 })) {
+    throw new ValidationError(
+      "Invalid answer, it must be between 1 and 1024 characters."
     );
   }
 };
@@ -96,15 +72,14 @@ const validateAnswer = (type, answer) => {
 const validatePoints = (points) => {
   if (!validator.isInt(String(points), { min: 0, max: 100 })) {
     throw new ValidationError(
-      "Invalid question points, It must be a number between 0 and 100."
+      "Invalid points, It must be a number between 0 and 100."
     );
   }
 };
 
-// Main createQuestion function
 const createQuestion = async (
-  client,
-  quiz,
+  clientId,
+  quizId,
   type,
   text,
   options,
@@ -114,12 +89,12 @@ const createQuestion = async (
   validateType(type);
   validateText(text);
   validateOptions(type, options);
-  validateAnswer(type, answer);
+  validateAnswer(type, options, answer);
   validatePoints(points);
 
   const question = await questionRepository.createQuestion(
-    client.id,
-    quiz.id,
+    clientId,
+    quizId,
     type,
     text,
     options,
@@ -130,8 +105,12 @@ const createQuestion = async (
   return question;
 };
 
-const deleteQuestion = async (client, id) => {
-  await questionRepository.deleteQuestion(client.id, id);
+const deleteQuestion = async (clientId, questionId) => {
+  await questionRepository.deleteQuestion(clientId, questionId);
 };
 
-module.exports = { createQuestion, deleteQuestion };
+const deleteQuestionsForQuiz = async (clientId, quizId) => {
+  await questionRepository.deleteQuestionsForQuiz(clientId, quizId);
+};
+
+module.exports = { createQuestion, deleteQuestion, deleteQuestionsForQuiz };
