@@ -2,28 +2,18 @@ const validator = require("validator");
 
 const { DifficultyTypes } = require("../enums");
 const { ValidationError } = require("../errors/common");
-const { quizRepository } = require("../../data-access/repositories");
 const questionService = require("../services/question-service");
 
-const MIN_TITLE_LENGTH = 1;
-const MAX_TITLE_LENGTH = 100;
-const MIN_DESCRIPTION_LENGTH = 1;
-const MAX_DESCRIPTION_LENGTH = 500;
-const MAX_PASSING_SCORE = 100;
+const { quizRepository } = require("../../data-access/repositories");
 
 const validateTitle = (title) => {
   if (typeof title !== "string") {
-    throw new ValidationError(`Invalid title, It must be a string.`);
+    throw new ValidationError("Invalid title, It must be a string.");
   }
 
-  if (
-    !validator.isLength(title.trim(), {
-      min: MIN_TITLE_LENGTH,
-      max: MAX_TITLE_LENGTH,
-    })
-  ) {
+  if (!validator.isLength(title, { min: 1, max: 128 })) {
     throw new ValidationError(
-      `Invalid title, It must be between ${MIN_TITLE_LENGTH} and ${MAX_TITLE_LENGTH} characters.`
+      "Invalid title, It must be between 1 and 128 characters."
     );
   }
 };
@@ -33,14 +23,9 @@ const validateDescription = (description) => {
     throw new ValidationError(`Invalid description, It must be a string.`);
   }
 
-  if (
-    !validator.isLength(description.trim(), {
-      min: MIN_DESCRIPTION_LENGTH,
-      max: MAX_DESCRIPTION_LENGTH,
-    })
-  ) {
+  if (!validator.isLength(description, { min: 1, max: 1024 })) {
     throw new ValidationError(
-      `Invalid description, It must be between ${MIN_DESCRIPTION_LENGTH} and ${MAX_DESCRIPTION_LENGTH} characters.`
+      "Invalid description, It must be between 1 and 1024 characters."
     );
   }
 };
@@ -48,19 +33,17 @@ const validateDescription = (description) => {
 const validateCategories = (categories) => {
   if (
     !Array.isArray(categories) ||
-    !categories.every((cat) => validator.isAlpha(cat))
+    !categories.every((category) => typeof category === "string")
   ) {
     throw new ValidationError(
-      "Invalid categories, It must be an array of alphabetic strings."
+      "Invalid categories, It must be an array of strings."
     );
   }
 };
 
 const validateDifficulty = (difficulty) => {
   if (!Object.values(DifficultyTypes).includes(difficulty)) {
-    throw new ValidationError(
-      "Invalid difficulty, It must be one of the allowed types."
-    );
+    throw new ValidationError("Invalid difficulty.");
   }
 };
 
@@ -95,31 +78,21 @@ const validateDueDate = (dueDate) => {
 };
 
 const validatePassingScore = (passingScore) => {
-  if (
-    !validator.isInt(String(passingScore), { min: 0, max: MAX_PASSING_SCORE })
-  ) {
+  if (!validator.isInt(String(passingScore), { min: 0, max: 100 })) {
     throw new ValidationError(
-      `Invalid passingScore, It must be between 0 and ${MAX_PASSING_SCORE}.`
+      `Invalid passingScore, It must be between 0 and 100.`
     );
-  }
-};
-
-const validateIsPublished = (isPublished) => {
-  if (typeof isPublished !== "boolean") {
-    throw new ValidationError("Invalid isPublished, It must be a boolean.");
   }
 };
 
 const validateQuestions = (questions) => {
-  if (!Array.isArray(questions) || questions.length === 0) {
-    throw new ValidationError(
-      "Invalid questions, It must be a non-empty array."
-    );
+  if (!Array.isArray(questions)) {
+    throw new ValidationError("Invalid questions, It must be an array.");
   }
 };
 
 const createQuiz = async (
-  client,
+  clientId,
   title,
   description,
   categories,
@@ -128,7 +101,6 @@ const createQuiz = async (
   attemptLimit,
   dueDate,
   passingScore,
-  isPublished,
   questions
 ) => {
   validateTitle(title);
@@ -139,11 +111,10 @@ const createQuiz = async (
   validateAttemptLimit(attemptLimit);
   validateDueDate(dueDate);
   validatePassingScore(passingScore);
-  validateIsPublished(isPublished);
   validateQuestions(questions);
 
   const quiz = await quizRepository.createQuiz(
-    client.id,
+    clientId,
     title,
     description,
     categories,
@@ -151,19 +122,18 @@ const createQuiz = async (
     timeLimit,
     attemptLimit,
     dueDate,
-    passingScore,
-    isPublished
+    passingScore
   );
 
-  // Try creating each question one by one
   const createdQuestions = [];
 
   for (let i = 0; i < questions.length; i++) {
     const { type, text, options, answer, points } = questions[i];
+
     try {
       const createdQuestion = await questionService.createQuestion(
-        client,
-        quiz,
+        clientId,
+        quiz.id,
         type,
         text,
         options,
@@ -173,15 +143,7 @@ const createQuiz = async (
 
       createdQuestions.push(createdQuestion);
     } catch (error) {
-      // Cleanup if any question fails
-
-      await Promise.all(
-        createdQuestions.map((question) =>
-          questionService.deleteQuestion(client, question.id)
-        )
-      );
-
-      await quizRepository.deleteQuiz(client.id, quiz.id);
+      await deleteQuizWithQuestions(clientId, quiz.id);
 
       throw new ValidationError(
         `Failed to create question ${i + 1}: ${error.message}`
@@ -196,37 +158,43 @@ const createQuiz = async (
   return { ...quiz, questions: questionsWithoutQuizId };
 };
 
-const retrieveQuizzes = async (clientId) => {  
-  const { quizzes, questions } = await quizRepository.retrieveQuizzes(clientId);  
+const retrieveQuizzes = async (clientId) => {
+  const { quizzes, questions } = await quizRepository.retrieveQuizzes(clientId);
 
-  if (!Array.isArray(quizzes)) {  
-      throw new Error('Quizzes is not an array');  
-  }  
-  
-  const quizzesWithQuestions = quizzes.map(quiz => {  
-      const quizData = quiz;  
-      return {  
-          _id: quizData._id,  
-          title: quizData.title,  
-          description: quizData.description,  
-          categories: quizData.categories,  
-          difficulty: quizData.difficulty,  
-          timeLimit: quizData.timeLimit,  
-          attemptLimit: quizData.attemptLimit,  
-          dueDate: quizData.dueDate,  
-          passingScore: quizData.passingScore,  
-          isPublished: quizData.isPublished,  
-          createdAt: quizData.createdAt,  
-          updatedAt: quizData.updatedAt,  
-          questions: questions
-      };  
-  });  
+  if (!Array.isArray(quizzes)) {
+    throw new Error("Quizzes is not an array");
+  }
 
-  return {  
-      success: true,  
-      quizzes: quizzesWithQuestions
-  };  
+  const quizzesWithQuestions = quizzes.map((quiz) => {
+    const quizData = quiz;
+    return {
+      _id: quizData._id,
+      title: quizData.title,
+      description: quizData.description,
+      categories: quizData.categories,
+      difficulty: quizData.difficulty,
+      timeLimit: quizData.timeLimit,
+      attemptLimit: quizData.attemptLimit,
+      dueDate: quizData.dueDate,
+      passingScore: quizData.passingScore,
+      isPublished: quizData.isPublished,
+      createdAt: quizData.createdAt,
+      updatedAt: quizData.updatedAt,
+      questions: questions,
+    };
+  });
+
+  return {
+    success: true,
+    quizzes: quizzesWithQuestions,
+  };
 };
 
-
 module.exports = { createQuiz, retrieveQuizzes };
+
+const deleteQuizWithQuestions = async (clientId, quizId) => {
+  await quizRepository.deleteQuiz(clientId, quizId);
+  await questionService.deleteQuestionsForQuiz(clientId, quizId);
+};
+
+module.exports = { createQuiz };

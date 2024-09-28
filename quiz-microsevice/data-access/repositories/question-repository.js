@@ -33,10 +33,16 @@ const createQuestion = async (
   return toDTO(question);
 };
 
-const deleteQuestion = async (clientId, id) => {
+const deleteQuestion = async (clientId, questionId) => {
   const { Question } = getModelsForClient(clientId);
 
-  await Question.findOneAndDelete({ _id: id });
+  await Question.findOneAndDelete({ _id: questionId });
 };
 
-module.exports = { createQuestion, deleteQuestion };
+const deleteQuestionsForQuiz = async (clientId, quizId) => {
+  const { Question } = getModelsForClient(clientId);
+
+  await Question.deleteMany({ quiz: quizId });
+};
+
+module.exports = { createQuestion, deleteQuestion, deleteQuestionsForQuiz };
