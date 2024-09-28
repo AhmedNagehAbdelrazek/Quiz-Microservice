@@ -1,5 +1,5 @@
 class InvalidClientError extends Error {
-  constructor(message = "Invalid client error") {
+  constructor(message = "Invalid client.") {
     super(message);
   }
 }

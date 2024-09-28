@@ -35,8 +35,7 @@ const createQuiz = async (
   timeLimit,
   attemptLimit,
   dueDate,
-  passingScore,
-  isPublished
+  passingScore
 ) => {
   const { Quiz } = getModelsForClient(clientId);
 
@@ -49,25 +48,43 @@ const createQuiz = async (
     attemptLimit,
     dueDate,
     passingScore,
-    isPublished,
   });
 
   return toDTO(quiz);
 };
 
-const deleteQuiz = async (clientId, id) => {
+const retrieveQuizzes = async (clientId, skip, limit) => {
   const { Quiz } = getModelsForClient(clientId);
 
-  await Quiz.findOneAndDelete({ _id: id });
+  const quizzes = await Quiz.find({}).skip(skip).limit(limit);
+
+  return quizzes.map(toDTO);
 };
 
-const retrieveSpecificQuiz = async (client, quizId) => {
-  const { Quiz } = getModelsForClient(client);
-  
+const countQuizzes = (clientId) => {
+  const { Quiz } = getModelsForClient(clientId);
+
+  return Quiz.countDocuments({});
+};
+
+const retrieveSpecificQuiz = async (clientId, quizId) => {
+  const { Quiz } = getModelsForClient(clientId);
+
   const quiz = await Quiz.findById(quizId);
-   
+
   return toDTO(quiz);
 };
 
-module.exports = { createQuiz, deleteQuiz, retrieveSpecificQuiz };
+const deleteQuiz = async (clientId, quizId) => {
+  const { Quiz } = getModelsForClient(clientId);
 
+  await Quiz.findOneAndDelete({ _id: quizId });
+};
+
+module.exports = {
+  createQuiz,
+  retrieveQuizzes,
+  countQuizzes,
+  retrieveSpecificQuiz,
+  deleteQuiz,
+};

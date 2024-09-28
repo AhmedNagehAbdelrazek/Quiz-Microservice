@@ -15,8 +15,12 @@ const authenticate = async (token) => {
     );
 
     if (!client) {
-      throw Error();
-    }
+      throw new Error();
+    };
+    // This is not tested yet, there is nothing to test on.
+    if (client.isEnabled === false) {
+      throw new Error("Client is disabled. Cannot be authenticated.");
+    };
 
     return client;
   } catch (error) {

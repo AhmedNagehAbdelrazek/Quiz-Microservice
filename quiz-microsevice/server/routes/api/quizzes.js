@@ -4,7 +4,11 @@ const router = Router();
 
 const { quizController } = require("../../controllers");
 
-router.post("/", quizController.createQuiz);
-router.get("/:quizId", quizController.retrieveSpecificQuiz);
+router
+  .route("/")
+  .post(quizController.createQuiz)
+  .get(quizController.retrieveQuizzes);
+
+router.route("/:quizId").get(quizController.retrieveSpecificQuiz);
 
 module.exports = router;

@@ -1,7 +1,8 @@
-const { quizService } = require("../../business-logic/services");
-const { ValidationError } = require("../../business-logic/errors/common");
+const asyncHandler = require("express-async-handler");
 
-const createQuiz = async (req, res) => {
+const { quizService } = require("../../business-logic/services");
+
+const createQuiz = asyncHandler(async (req, res) => {
   const client = req.client;
   const {
     title,
@@ -12,83 +13,65 @@ const createQuiz = async (req, res) => {
     attemptLimit,
     dueDate,
     passingScore,
-    isPublished,
     questions,
   } = req.body;
-  try {
-    const quiz = await quizService.createQuiz(
-      client,
-      title,
-      description,
-      categories,
-      difficulty,
-      timeLimit,
-      attemptLimit,
-      dueDate,
-      passingScore,
-      isPublished,
-      questions
-    );
 
-    res.status(201).json({
-      success: true,
-      data: {
-        quiz,
-      },
-    });
-  } catch (e) {
-    let statusCode = 500;
-    let message = "An unexpected error occurred on the server.";
+  const quiz = await quizService.createQuiz(
+    client.id,
+    title,
+    description,
+    categories,
+    difficulty,
+    timeLimit,
+    attemptLimit,
+    dueDate,
+    passingScore,
+    questions
+  );
 
-    if (e instanceof ValidationError) {
-      statusCode = 400;
-      message = e.message;
-    }
+  res.status(201).json({
+    success: true,
+    data: {
+      quiz,
+    },
+  });
+});
 
-    if (statusCode === 500) {
-      console.error(e);
-    }
+const retrieveQuizzes = asyncHandler(async (req, res) => {
+  const client = req.client;
+  const { page = 1, limit = 20 } = req.query;
 
-    res.status(statusCode).json({
-      success: false,
-      message,
-    });
-  }
-};
+  const { quizzes, pagination } = await quizService.retrieveQuizzes(
+    client.id,
+    page,
+    limit
+  );
 
+  return res.status(200).json({
+    success: true,
+    data: {
+      quizzes,
+    },
+    metadata: {
+      pagination,
+    },
+  });
+});
 
-const retrieveSpecificQuiz = async (req, res) => {
-  try {
-    const client = req.client;
-    
-    
-    const quiz = await quizService.retrieveSpecificQuiz(client.id, req.params.quizId)
-    
-    return res.status(200).json({
-      success: true,
-      data: {
-        quiz: quiz
-      },
-    });
-  } catch (e) {
-    let statusCode = 500;
-    let message = "An unexpected error occurred on the server.";
-    
-    if (e instanceof ValidationError) {
-      statusCode = 400;
-      message = e.message;
-    }
-    
-    if (statusCode === 500) {
-      console.error(e);
-    }
-    
-    res.status(statusCode).json({
-      success: false,
-      message,
-    });
-  }
-};
+const retrieveSpecificQuiz = asyncHandler(async (req, res) => {
+  const client = req.client;
 
+  const quiz = await quizService.retrieveSpecificQuiz(
+    client.id,
+    req.params.quizId
+  );
 
-module.exports = { createQuiz, retrieveSpecificQuiz};
+  return res.status(200).json({
+    success: true,
+    data: {
+      quiz: quiz,
+    },
+  });
+});
+
+module.exports = { createQuiz, retrieveQuizzes, retrieveSpecificQuiz };

@@ -4,7 +4,12 @@ require("dotenv").config();
 const mongoose = require("mongoose");
 const readline = require("readline");
 
-const { createClient, retrieveAllClients, regenerateClientCredentials } = require("./actions");
+const { createClient, 
+  retrieveAllClients, 
+  regenerateClientCredentials, 
+  renameClient, 
+  disableClient, 
+  enableClient, } = require("./actions");
 
 const cli = readline.createInterface({
   input: process.stdin,
@@ -18,19 +23,40 @@ cli
 
     try {
       switch (command) {
-        case "create-client":
+        case "create-client":{
           const [name] = args;
-
           await createClient(name);
           break;
-        case 'regenerate-client-credentials':
+        }
+
+        case 'regenerate-client-credentials':{
           const [id] = args;
           await regenerateClientCredentials(id)
           break;
+        }
           
-        case "list-clients":
+        case "list-clients":{
           await retrieveAllClients();
           break;
+        }
+
+        case "rename-client":{
+          const [id, name] = args;
+          await renameClient(id, name);
+          break;
+        }
+
+        case "disable-client":{
+          const [id] = args;
+          await disableClient(id);
+          break;
+        }
+
+        case "enable-client":{
+          const [id] = args;
+          await enableClient(id);
+          break;
+        }
 
         case "exit":
         case "quit":
