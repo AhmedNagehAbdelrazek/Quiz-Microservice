@@ -2,10 +2,8 @@ const { Router } = require("express");
 
 const router = Router();
 
-router.get("/status", (req, res) => {
-  res.json({
-    status: "Working.",
-  });
-});
+const quizzesRoutes = require("./quizzes");
+
+router.use("/v1/quizzes", quizzesRoutes);
 
 module.exports = router;
