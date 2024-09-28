@@ -1,9 +1,8 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 
-const { ValidationError } = require("../errors/common");
-
 const {
+  InvalidRequestError,
   UnsupportedGrantTypeError,
   InvalidClientError,
 } = require("../errors/oauth");
@@ -14,19 +13,19 @@ const { JWT_SECRET, ACCESS_TOKEN_EXPIRY } = process.env;
 
 const generateToken = async (grantType, clientId, clientSecret) => {
   if (!grantType || typeof grantType !== "string") {
-    throw new ValidationError(
+    throw new InvalidRequestError(
       "Invalid or missing grant_type. It must be a non-empty string."
     );
   }
 
   if (!clientId || typeof clientId !== "string") {
-    throw new ValidationError(
+    throw new InvalidRequestError(
       "Invalid or missing client_id. It must be a non-empty string."
     );
   }
 
   if (!clientSecret || typeof clientSecret !== "string") {
-    throw new InvalidClientError(
+    throw new InvalidRequestError(
       "Invalid or missing client_secret. It must be a non-empty string."
     );
   }
@@ -46,7 +45,7 @@ const generateToken = async (grantType, clientId, clientSecret) => {
   }
 
   return jwt.sign({ clientId }, JWT_SECRET, {
-    expiresIn: ACCESS_TOKEN_EXPIRY || '1h'
+    expiresIn: ACCESS_TOKEN_EXPIRY,
   });
 };
 
