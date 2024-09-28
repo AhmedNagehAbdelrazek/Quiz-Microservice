@@ -38,6 +38,12 @@ const generateToken = async (grantType, clientId, clientSecret) => {
 
   const client = await clientRepository.retrieveOneByClientId(clientId);
 
+  if(client && client.isEnabled === false){
+    throw new InvalidClientError(
+      "Client is disabled. Cannot be authenticated."
+    );
+  };
+
   if (!client || !bcrypt.compareSync(clientSecret, client.clientSecretHash)) {
     throw new InvalidClientError(
       "The provided 'client_id' or 'client_secret' is incorrect."
