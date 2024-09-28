@@ -67,10 +67,24 @@ const countQuizzes = (clientId) => {
   return Quiz.countDocuments({});
 };
 
+const retrieveSpecificQuiz = async (clientId, quizId) => {
+  const { Quiz } = getModelsForClient(clientId);
+
+  const quiz = await Quiz.findById(quizId);
+
+  return toDTO(quiz);
+};
+
 const deleteQuiz = async (clientId, quizId) => {
   const { Quiz } = getModelsForClient(clientId);
 
   await Quiz.findOneAndDelete({ _id: quizId });
 };
 
-module.exports = { createQuiz, retrieveQuizzes, countQuizzes, deleteQuiz };
+module.exports = {
+  createQuiz,
+  retrieveQuizzes,
+  countQuizzes,
+  retrieveSpecificQuiz,
+  deleteQuiz,
+};

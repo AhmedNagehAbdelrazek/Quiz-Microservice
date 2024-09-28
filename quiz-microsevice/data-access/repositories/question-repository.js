@@ -39,10 +39,23 @@ const deleteQuestion = async (clientId, questionId) => {
   await Question.findOneAndDelete({ _id: questionId });
 };
 
+const retrieveQuestionsForQuiz = async (clientId, quizId) => {
+  const { Question } = getModelsForClient(clientId);
+
+  const questions = await Question.find({ quiz: quizId });
+
+  return questions.map(toDTO);
+};
+
 const deleteQuestionsForQuiz = async (clientId, quizId) => {
   const { Question } = getModelsForClient(clientId);
 
   await Question.deleteMany({ quiz: quizId });
 };
 
-module.exports = { createQuestion, deleteQuestion, deleteQuestionsForQuiz };
+module.exports = {
+  createQuestion,
+  deleteQuestion,
+  retrieveQuestionsForQuiz,
+  deleteQuestionsForQuiz,
+};

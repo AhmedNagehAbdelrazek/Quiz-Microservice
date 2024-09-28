@@ -5,6 +5,12 @@ const { ValidationError } = require("../errors/common");
 
 const { questionRepository } = require("../../data-access/repositories");
 
+const validatId = (id, message = "Invalid id. It must be a valid MongoId.") => {
+  if (!validator.isMongoId(id)) {
+    throw new ValidationError(message);
+  }
+};
+
 const validateType = (type) => {
   if (!Object.values(QuestionsTypes).includes(type)) {
     throw new ValidationError("Invalid type.");
@@ -86,6 +92,7 @@ const createQuestion = async (
   answer,
   points
 ) => {
+  validatId(clientId, "Invalid clientId, It must be a valid MongoId.");
   validateType(type);
   validateText(text);
   validateOptions(type, options);
@@ -106,11 +113,26 @@ const createQuestion = async (
 };
 
 const deleteQuestion = async (clientId, questionId) => {
+  validatId(clientId, "Invalid clientId, It must be a valid MongoId.");
+
   await questionRepository.deleteQuestion(clientId, questionId);
 };
 
+const retrieveQuestionsForQuiz = (clientId, quizId) => {
+  validatId(clientId, "Invalid clientId, It must be a valid MongoId.");
+
+  return questionRepository.retrieveQuestionsForQuiz(clientId, quizId);
+};
+
 const deleteQuestionsForQuiz = async (clientId, quizId) => {
+  validatId(clientId, "Invalid clientId, It must be a valid MongoId.");
+
   await questionRepository.deleteQuestionsForQuiz(clientId, quizId);
 };
 
-module.exports = { createQuestion, deleteQuestion, deleteQuestionsForQuiz };
+module.exports = {
+  createQuestion,
+  deleteQuestion,
+  retrieveQuestionsForQuiz,
+  deleteQuestionsForQuiz,
+};

@@ -58,4 +58,20 @@ const retrieveQuizzes = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { createQuiz, retrieveQuizzes };
+const retrieveSpecificQuiz = asyncHandler(async (req, res) => {
+  const client = req.client;
+
+  const quiz = await quizService.retrieveSpecificQuiz(
+    client.id,
+    req.params.quizId
+  );
+
+  return res.status(200).json({
+    success: true,
+    data: {
+      quiz: quiz,
+    },
+  });
+});
+
+module.exports = { createQuiz, retrieveQuizzes, retrieveSpecificQuiz };

@@ -6,6 +6,24 @@ const questionService = require("../services/question-service");
 
 const { quizRepository } = require("../../data-access/repositories");
 
+const validatId = (id, message = "Invalid id. It must be a valid MongoId.") => {
+  if (!validator.isMongoId(id)) {
+    throw new ValidationError(message);
+  }
+};
+
+const validatePage = (page) => {
+  if (!validator.isInt(String(page), { min: 0 })) {
+    throw new ValidationError("Invalid page, It must be a positive integer.");
+  }
+};
+
+const validateLimit = (limit) => {
+  if (!validator.isInt(String(limit), { min: 0 })) {
+    throw new ValidationError("Invalid limit, It must be a positive integer.");
+  }
+};
+
 const validateTitle = (title) => {
   if (typeof title !== "string") {
     throw new ValidationError("Invalid title, It must be a string.");
@@ -103,6 +121,7 @@ const createQuiz = async (
   passingScore,
   questions
 ) => {
+  validatId(clientId, "Invalid clientId, It must be a valid MongoId.");
   validateTitle(title);
   validateDescription(description);
   validateCategories(categories);
@@ -159,6 +178,10 @@ const createQuiz = async (
 };
 
 const retrieveQuizzes = async (clientId, page, limit) => {
+  validatId(clientId, "Invalid clientId, It must be a valid MongoId.");
+  validatePage(page);
+  validateLimit(limit);
+
   const quizzes = await quizRepository.retrieveQuizzes(
     clientId,
     (page - 1) * limit,
@@ -177,9 +200,25 @@ const retrieveQuizzes = async (clientId, page, limit) => {
   };
 };
 
+const retrieveSpecificQuiz = async (clientId, quizId) => {
+  validatId(clientId, "Invalid clientId, It must be a valid MongoId.");
+  validatId(quizId, "Invalid quizId, It must be a valid MongoId.");
+
+  const quiz = await quizRepository.retrieveSpecificQuiz(clientId, quizId);
+  const questions = await questionService.retrieveQuestionsForQuiz(
+    clientId,
+    quizId
+  );
+
+  return { ...quiz, questions };
+};
+
 const deleteQuizWithQuestions = async (clientId, quizId) => {
+  validatId(clientId, "Invalid clientId, It must be a valid MongoId.");
+  validatId(quizId, "Invalid quizId, It must be a valid MongoId.");
+
   await quizRepository.deleteQuiz(clientId, quizId);
   await questionService.deleteQuestionsForQuiz(clientId, quizId);
 };
 
-module.exports = { createQuiz, retrieveQuizzes };
+module.exports = { createQuiz, retrieveQuizzes, retrieveSpecificQuiz };
