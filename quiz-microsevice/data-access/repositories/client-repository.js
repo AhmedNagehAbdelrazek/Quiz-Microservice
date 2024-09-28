@@ -1,9 +1,10 @@
 const Client = require("../models/client");
 const { NotExistError } = require("../../business-logic/errors/common");
 
-const toDTO = ({ _id, name, clientId, clientSecretHash }) => {
-  return { id: _id.toString(), name, clientId, clientSecretHash };
+const toDTO = ({ _id, name, clientId, clientSecretHash, isEnabled}) => {
+  return { id: _id.toString(), name, clientId, clientSecretHash, isEnabled};
 };
+
 
 const createOne = async (name, clientId, clientSecretHash) => {
   const client = await Client.create({ name, clientId, clientSecretHash });
@@ -37,9 +38,38 @@ const updateClientCredentials = async (id, clientId, clientSecretHash) => {
   return toDTO(client);
 };
 
+
+const renameClient = async(id, name) =>{
+  const client = await Client.findByIdAndUpdate({_id: id}, {name: name}, {new: true})
+  if(!client){
+    return null;
+  };
+  return toDTO(client);
+};
+
+const disableClient = async(id) => {
+  const client = await Client.findByIdAndUpdate({_id: id}, {isEnabled: false}, {new: true});
+  if(!client){
+    return null;
+  };
+  return toDTO(client);
+
+}
+const enableClient = async(id) => {
+  const client = await Client.findByIdAndUpdate({_id: id}, {isEnabled: true}, {new: true});
+  if(!client){
+    return null;
+  };
+  return toDTO(client);
+
+}
+
 module.exports = {
   createOne,
   retrieveOneByClientId,
   retrieveAllClients,
   updateClientCredentials,
+  renameClient,
+  disableClient,
+  enableClient,
 };
