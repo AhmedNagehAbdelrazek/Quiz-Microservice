@@ -37,4 +37,25 @@ const createQuiz = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { createQuiz };
+const retrieveQuizzes = asyncHandler(async (req, res) => {
+  const client = req.client;
+  const { page = 1, limit = 20 } = req.query;
+
+  const { quizzes, pagination } = await quizService.retrieveQuizzes(
+    client.id,
+    page,
+    limit
+  );
+
+  return res.status(200).json({
+    success: true,
+    data: {
+      quizzes,
+    },
+    metadata: {
+      pagination,
+    },
+  });
+});
+
+module.exports = { createQuiz, retrieveQuizzes };

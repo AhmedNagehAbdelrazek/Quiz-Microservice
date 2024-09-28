@@ -158,9 +158,28 @@ const createQuiz = async (
   return { ...quiz, questions: questionsWithoutQuizId };
 };
 
+const retrieveQuizzes = async (clientId, page, limit) => {
+  const quizzes = await quizRepository.retrieveQuizzes(
+    clientId,
+    (page - 1) * limit,
+    limit
+  );
+
+  const totalCount = await quizRepository.countQuizzes(clientId);
+  const totalPages = Math.ceil(totalCount / limit);
+
+  return {
+    quizzes,
+    pagination: {
+      page,
+      totalPages,
+    },
+  };
+};
+
 const deleteQuizWithQuestions = async (clientId, quizId) => {
   await quizRepository.deleteQuiz(clientId, quizId);
   await questionService.deleteQuestionsForQuiz(clientId, quizId);
 };
 
-module.exports = { createQuiz };
+module.exports = { createQuiz, retrieveQuizzes };
