@@ -240,6 +240,37 @@ const publishQuiz = async (clientId, quizId) => {
   return quiz;
 };
 
+const addQuestionToQuiz = async (
+  clientId,
+  quizId,
+  type,
+  text,
+  options,
+  answer,
+  points
+) => {
+  validatId(clientId, "Invalid clientId, It must be a valid MongoId.");
+  validatId(quizId, "Invalid quizId, It must be a valid MongoId.");
+
+  const quiz = await quizRepository.retrieveQuiz(clientId, quizId);
+
+  if (!quiz) {
+    throw new NotExistError("There is no quiz with this id.");
+  }
+
+  const question = await questionService.createQuestion(
+    clientId,
+    quizId,
+    type,
+    text,
+    options,
+    answer,
+    points
+  );
+
+  return question;
+};
+
 const deleteQuizWithQuestions = async (clientId, quizId) => {
   validatId(clientId, "Invalid clientId, It must be a valid MongoId.");
   validatId(quizId, "Invalid quizId, It must be a valid MongoId.");
@@ -253,4 +284,5 @@ module.exports = {
   retrieveQuizzes,
   retrieveQuiz,
   publishQuiz,
+  addQuestionToQuiz,
 };

@@ -1,6 +1,7 @@
 const asyncHandler = require("express-async-handler");
 
 const { quizService } = require("../../business-logic/services");
+const { quizRepository } = require("../../data-access/repositories");
 
 const createQuiz = asyncHandler(async (req, res) => {
   const client = req.client;
@@ -61,10 +62,7 @@ const retrieveQuizzes = asyncHandler(async (req, res) => {
 const retrieveQuiz = asyncHandler(async (req, res) => {
   const client = req.client;
 
-  const quiz = await quizService.retrieveSpecificQuiz(
-    client.id,
-    req.params.quizId
-  );
+  const quiz = await quizService.retrieveQuiz(client.id, req.params.quizId);
 
   return res.status(200).json({
     success: true,
@@ -88,4 +86,33 @@ const publishQuiz = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { createQuiz, retrieveQuizzes, retrieveQuiz, publishQuiz };
+const addQuestionToQuiz = asyncHandler(async (req, res) => {
+  const client = req.client;
+  const { quizId } = req.params;
+  const { type, text, options, answer, points } = req.body;
+
+  const question = await quizService.addQuestionToQuiz(
+    client.id,
+    quizId,
+    type,
+    text,
+    options,
+    answer,
+    points
+  );
+
+  res.status(201).json({
+    success: true,
+    data: {
+      question,
+    },
+  });
+});
+
+module.exports = {
+  createQuiz,
+  retrieveQuizzes,
+  retrieveQuiz,
+  publishQuiz,
+  addQuestionToQuiz,
+};
