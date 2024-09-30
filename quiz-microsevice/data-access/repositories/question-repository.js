@@ -53,9 +53,17 @@ const deleteQuestionsForQuiz = async (clientId, quizId) => {
   await Question.deleteMany({ quiz: quizId });
 };
 
+
+const deleteOneQuestionForQuiz = async (clientId, questionId) => {
+  const { Question } = getModelsForClient(clientId);
+
+  await Question.deleteOne({ _id: questionId });
+};
+
 module.exports = {
   createQuestion,
   deleteQuestion,
   retrieveQuestionsForQuiz,
   deleteQuestionsForQuiz,
+  deleteOneQuestionForQuiz,
 };
