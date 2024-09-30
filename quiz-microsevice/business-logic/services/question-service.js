@@ -1,7 +1,8 @@
 const validator = require("validator");
 
 const { QuestionsTypes } = require("../enums");
-const { ValidationError } = require("../errors/common");
+const { ValidationError, NotExistError} = require("../errors/common");
+
 
 const { questionRepository } = require("../../data-access/repositories");
 
@@ -98,7 +99,7 @@ const createQuestion = async (
   validateOptions(type, options);
   validateAnswer(type, options, answer);
   validatePoints(points);
-
+  
   const question = await questionRepository.createQuestion(
     clientId,
     quizId,
@@ -108,13 +109,13 @@ const createQuestion = async (
     answer,
     points
   );
-
+  
   return question;
 };
 
 const deleteQuestion = async (clientId, questionId) => {
   validatId(clientId, "Invalid clientId, It must be a valid MongoId.");
-
+  
   await questionRepository.deleteQuestion(clientId, questionId);
 };
 
@@ -133,8 +134,32 @@ const deleteQuestionsForQuiz = async (clientId, quizId) => {
 const deleteOneQuestionsForQuiz = async (clientId, questionId) => {
   validatId(clientId, "Invalid clientId, It must be a valid MongoId.");
   // validatId(questionId, "Invalid clientId, It must be a valid MongoId.");
-
+  
   await questionRepository.deleteOneQuestionForQuiz(clientId, questionId);
+};
+
+
+const updateQuestion = async (clientId, questionId, updates) => {
+  validatId(clientId, "Invalid clientId, It must be a valid MongoId.");
+  validatId(questionId, "Invalid questionId, It must be a valid MongoId.");
+
+  if (updates.type) validateType(updates.type);
+  if (updates.text) validateText(updates.text);
+  if (updates.options) validateOptions(updates.type, updates.options);
+  if (updates.answer) validateAnswer(updates.type, updates.options, updates.answer);
+  if (updates.points !== undefined) validatePoints(updates.points);
+
+  const updatedQuestion = await questionRepository.updateQuestion(
+    clientId,
+    questionId,
+    updates
+  );
+
+  // if (!updatedQuestion) {
+  //   throw new NotExistError("");
+  // }
+
+  return updatedQuestion;
 };
 
 module.exports = {
@@ -143,4 +168,5 @@ module.exports = {
   retrieveQuestionsForQuiz,
   deleteQuestionsForQuiz,
   deleteOneQuestionsForQuiz,
+  updateQuestion,
 };

@@ -120,6 +120,26 @@ const deleteOneQuestionForQuiz = asyncHandler(async (req, res) => {
   
 });
 
+const updateQuestion = asyncHandler(async (req, res) => {
+  const client = req.client;
+  const { questionId } = req.params;
+  const updates = req.body;
+
+  const question = await questionService.updateQuestion(
+    client.id,
+    questionId,
+    updates
+  );
+
+  return res.status(200).json({
+    success: true,
+    data: {
+      question,
+    },
+  });
+});
+
+
 module.exports = {
   createQuiz,
   retrieveQuizzes,
@@ -127,4 +147,5 @@ module.exports = {
   publishQuiz,
   addQuestionToQuiz,
   deleteOneQuestionForQuiz,
+  updateQuestion,
 };
