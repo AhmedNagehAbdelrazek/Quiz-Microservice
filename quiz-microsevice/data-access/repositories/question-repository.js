@@ -29,35 +29,56 @@ const createQuestion = async (
     options,
     answer,
   });
-
+  
   return toDTO(question);
 };
 
 const deleteQuestion = async (clientId, questionId) => {
   const { Question } = getModelsForClient(clientId);
-
+  
   await Question.findOneAndDelete({ _id: questionId });
 };
 
 const retrieveQuestionsForQuiz = async (clientId, quizId) => {
   const { Question } = getModelsForClient(clientId);
-
+  
   const questions = await Question.find({ quiz: quizId });
-
+  
   return questions.map(toDTO);
 };
 
 const deleteQuestionsForQuiz = async (clientId, quizId) => {
   const { Question } = getModelsForClient(clientId);
-
+  
   await Question.deleteMany({ quiz: quizId });
 };
 
 
 const deleteOneQuestionForQuiz = async (clientId, questionId) => {
   const { Question } = getModelsForClient(clientId);
-
+  
   await Question.deleteOne({ _id: questionId });
+};
+
+
+
+
+
+
+const updateQuestion = async (clientId, questionId, update) => {
+  const { Question } = getModelsForClient(clientId);
+  
+  const question = await Question.findByIdAndUpdate(
+    questionId, 
+    { $set: update }, 
+    { new: true } 
+  );
+
+  if (!question) {
+    return null;
+  }
+
+  return toDTO(question);
 };
 
 module.exports = {
@@ -66,4 +87,5 @@ module.exports = {
   retrieveQuestionsForQuiz,
   deleteQuestionsForQuiz,
   deleteOneQuestionForQuiz,
+  updateQuestion,
 };
