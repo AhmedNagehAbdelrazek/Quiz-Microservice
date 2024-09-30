@@ -15,4 +15,8 @@ router.route("/:quizId/publish").post(quizController.publishQuiz);
 
 router.route("/:quizId/questions").post(quizController.addQuestionToQuiz);
 
+router.route("/:quizId/questions").post(quizController.addQuestionToQuiz);
+
+router.route("/questions/:questionId").delete(quizController.deleteOneQuestionForQuiz);
+
 module.exports = router;

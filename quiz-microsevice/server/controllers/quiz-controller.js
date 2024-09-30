@@ -1,7 +1,7 @@
 const asyncHandler = require("express-async-handler");
 
-const { quizService } = require("../../business-logic/services");
-const { quizRepository } = require("../../data-access/repositories");
+const { quizService, questionService } = require("../../business-logic/services");
+const { quizRepository, questionRepository } = require("../../data-access/repositories");
 
 const createQuiz = asyncHandler(async (req, res) => {
   const client = req.client;
@@ -75,9 +75,9 @@ const retrieveQuiz = asyncHandler(async (req, res) => {
 const publishQuiz = asyncHandler(async (req, res) => {
   const client = req.client;
   const { quizId } = req.params;
-
+  
   const quiz = await quizService.publishQuiz(client.id, quizId);
-
+  
   return res.status(200).json({
     success: true,
     data: {
@@ -90,7 +90,7 @@ const addQuestionToQuiz = asyncHandler(async (req, res) => {
   const client = req.client;
   const { quizId } = req.params;
   const { type, text, options, answer, points } = req.body;
-
+  
   const question = await quizService.addQuestionToQuiz(
     client.id,
     quizId,
@@ -100,7 +100,7 @@ const addQuestionToQuiz = asyncHandler(async (req, res) => {
     answer,
     points
   );
-
+  
   res.status(201).json({
     success: true,
     data: {
@@ -109,10 +109,22 @@ const addQuestionToQuiz = asyncHandler(async (req, res) => {
   });
 });
 
+
+const deleteOneQuestionForQuiz = asyncHandler(async (req, res) => {
+  const client = req.client;
+  const { questionId } = req.params;  
+
+  await questionService.deleteOneQuestionsForQuiz(client.id, questionId);
+
+  res.status(204).send(); 
+  
+});
+
 module.exports = {
   createQuiz,
   retrieveQuizzes,
   retrieveQuiz,
   publishQuiz,
   addQuestionToQuiz,
+  deleteOneQuestionForQuiz,
 };

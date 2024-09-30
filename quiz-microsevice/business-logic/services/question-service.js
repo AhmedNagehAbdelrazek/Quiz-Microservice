@@ -120,14 +120,21 @@ const deleteQuestion = async (clientId, questionId) => {
 
 const retrieveQuestionsForQuiz = (clientId, quizId) => {
   validatId(clientId, "Invalid clientId, It must be a valid MongoId.");
-
+  
   return questionRepository.retrieveQuestionsForQuiz(clientId, quizId);
 };
 
 const deleteQuestionsForQuiz = async (clientId, quizId) => {
   validatId(clientId, "Invalid clientId, It must be a valid MongoId.");
-
+  
   await questionRepository.deleteQuestionsForQuiz(clientId, quizId);
+};
+
+const deleteOneQuestionsForQuiz = async (clientId, questionId) => {
+  validatId(clientId, "Invalid clientId, It must be a valid MongoId.");
+  // validatId(questionId, "Invalid clientId, It must be a valid MongoId.");
+
+  await questionRepository.deleteOneQuestionForQuiz(clientId, questionId);
 };
 
 module.exports = {
@@ -135,4 +142,5 @@ module.exports = {
   deleteQuestion,
   retrieveQuestionsForQuiz,
   deleteQuestionsForQuiz,
+  deleteOneQuestionsForQuiz,
 };
