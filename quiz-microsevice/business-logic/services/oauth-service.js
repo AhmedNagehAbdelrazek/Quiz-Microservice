@@ -12,42 +12,32 @@ const { clientRepository } = require("../../data-access/repositories");
 const { JWT_SECRET, ACCESS_TOKEN_EXPIRY } = process.env;
 
 const generateToken = async (grantType, clientId, clientSecret) => {
-  if (!grantType || typeof grantType !== "string") {
-    throw new InvalidRequestError(
-      "Invalid or missing grant_type. It must be a non-empty string."
-    );
+  if (typeof grantType !== "string") {
+    throw new InvalidRequestError("Invalid grant_type, it must be a string.");
   }
 
-  if (!clientId || typeof clientId !== "string") {
-    throw new InvalidRequestError(
-      "Invalid or missing client_id. It must be a non-empty string."
-    );
+  if (typeof clientId !== "string") {
+    throw new InvalidRequestError("Invalid client_id, it must be a string.");
   }
 
-  if (!clientSecret || typeof clientSecret !== "string") {
+  if (typeof clientSecret !== "string") {
     throw new InvalidRequestError(
-      "Invalid or missing client_secret. It must be a non-empty string."
+      "Invalid client_secret, it must be a string."
     );
   }
 
   if (grantType !== "client_credentials") {
-    throw new UnsupportedGrantTypeError(
-      `The provided grant type "${grantType}" is not supported.`
-    );
+    throw new UnsupportedGrantTypeError("Unsupported 'grant_type'.");
   }
 
-  const client = await clientRepository.retrieveOneByClientId(clientId);
+  const client = await clientRepository.retrieveClientByClientId(clientId);
 
-  if(client && client.isEnabled === false){
-    throw new InvalidClientError(
-      "Client is disabled. Cannot be authenticated."
-    );
-  };
-
-  if (!client || !bcrypt.compareSync(clientSecret, client.clientSecretHash)) {
-    throw new InvalidClientError(
-      "The provided 'client_id' or 'client_secret' is incorrect."
-    );
+  if (
+    !client ||
+    !client.enabled ||
+    !bcrypt.compareSync(clientSecret, client.clientSecretHash)
+  ) {
+    throw new InvalidClientError("Incorrect 'client_id' or 'client_secret'.");
   }
 
   return jwt.sign({ clientId }, JWT_SECRET, {

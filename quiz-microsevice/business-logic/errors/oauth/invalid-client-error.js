@@ -1,7 +1,3 @@
-class InvalidClientError extends Error {
-  constructor(message = "Invalid client.") {
-    super(message);
-  }
-}
+class InvalidClientError extends Error {}
 
 module.exports = InvalidClientError;

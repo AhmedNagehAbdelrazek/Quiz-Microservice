@@ -1,7 +1,3 @@
-class UnsupportedGrantTypeError extends Error {
-  constructor(message = "Unsupported grant type.") {
-    super(message);
-  }
-}
+class UnsupportedGrantTypeError extends Error {}
 
 module.exports = UnsupportedGrantTypeError;

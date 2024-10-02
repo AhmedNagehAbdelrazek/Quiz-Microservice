@@ -1,7 +1,3 @@
-class InvalidRequestError extends Error {
-  constructor(message = "Invalid Request.") {
-    super(message);
-  }
-}
+class InvalidRequestError extends Error {}
 
 module.exports = InvalidRequestError;

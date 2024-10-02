@@ -1,10 +1,9 @@
 const { clientService } = require("../../business-logic/services");
 
 const regenerateClientCredentials = async (id) => {
-  const { clientId, clientSecret } =
-    await clientService.regenerateClientCredentials(id);
+  const credentials = await clientService.regenerateClientCredentials(id);
 
-  console.log({ clientId, clientSecret });
+  console.log(credentials);
 };
 
 module.exports = regenerateClientCredentials;
