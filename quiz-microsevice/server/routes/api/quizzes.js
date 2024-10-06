@@ -14,9 +14,24 @@ router
   .get(quizController.retrieveQuiz)
   .patch(quizController.updateQuiz);
 
-router.route("/:quizId/publish").post(quizController.publishQuiz);
+router.post("/:quizId/publish", quizController.publishQuiz);
 
-router.route("/:quizId/questions").post(quizController.addQuestionToQuiz);
+router.post("/:quizId/unpublish", quizController.unpublishQuiz);
+
+router.post("/:quizId/archive", quizController.archiveQuiz);
+
+router.post("/:quizId/unarchive", quizController.unarchiveQuiz);
+
+router.delete("/:quizId/delete", quizController.deletedQuiz);
+
+router.post("/:quizId/restore", quizController.restoreQuiz);
+
+router.delete(
+  "/:quizId/permanently-delete",
+  quizController.permanentlyDeleteQuiz
+);
+
+router.post("/:quizId/questions", quizController.addQuestionToQuiz);
 
 router
   .route("/:quizId/questions/:questionId")

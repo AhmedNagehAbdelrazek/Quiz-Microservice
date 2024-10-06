@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 
+const { ClientStatusTypes } = require("../enums");
 const {
   InvalidRequestError,
   UnsupportedGrantTypeError,
@@ -34,7 +35,7 @@ const generateToken = async (grantType, clientId, clientSecret) => {
 
   if (
     !client ||
-    !client.isEnabled ||
+    client.status === ClientStatusTypes.INACTIVE ||
     !bcrypt.compareSync(clientSecret, client.clientSecretHash)
   ) {
     throw new InvalidClientError("Incorrect 'client_id' or 'client_secret'.");

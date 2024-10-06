@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
 
+const { ClientStatusTypes } = require("../enums");
 const { InvalidOrExpiredTokenError } = require("../errors/auth");
 
 const { clientRepository } = require("../../data-access/repositories");
@@ -12,7 +13,7 @@ const authenticate = async (token) => {
 
     const client = await clientRepository.retrieveClientByClientId(clientId);
 
-    if (!client || !client.isEnabled) {
+    if (!client || client.status === ClientStatusTypes.INACTIVE) {
       throw new Error();
     }
 

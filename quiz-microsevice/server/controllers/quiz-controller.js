@@ -86,6 +86,80 @@ const publishQuiz = asyncHandler(async (req, res) => {
   });
 });
 
+const unpublishQuiz = asyncHandler(async (req, res) => {
+  const client = req.client;
+  const { quizId } = req.params;
+
+  const quiz = await quizService.unpublishQuiz(client.id, quizId);
+
+  return res.status(200).json({
+    success: true,
+    data: {
+      quiz: quiz,
+    },
+  });
+});
+
+const archiveQuiz = asyncHandler(async (req, res) => {
+  const client = req.client;
+  const { quizId } = req.params;
+
+  const quiz = await quizService.archiveQuiz(client.id, quizId);
+
+  return res.status(200).json({
+    success: true,
+    data: {
+      quiz: quiz,
+    },
+  });
+});
+
+const unarchiveQuiz = asyncHandler(async (req, res) => {
+  const client = req.client;
+  const { quizId } = req.params;
+
+  const quiz = await quizService.unarchieQuiz(client.id, quizId);
+
+  return res.status(200).json({
+    success: true,
+    data: {
+      quiz: quiz,
+    },
+  });
+});
+
+const deletedQuiz = asyncHandler(async (req, res) => {
+  const client = req.client;
+  const { quizId } = req.params;
+
+  const quiz = await quizService.deleteQuiz(client.id, quizId);
+
+  return res.sendStatus(204);
+});
+
+const restoreQuiz = asyncHandler(async (req, res) => {
+  const client = req.client;
+  const { quizId } = req.params;
+
+  const quiz = await quizService.restoreQuiz(client.id, quizId);
+
+  return res.status(200).json({
+    success: true,
+    data: {
+      quiz: quiz,
+    },
+  });
+});
+
+const permanentlyDeleteQuiz = asyncHandler(async (req, res) => {
+  const client = req.client;
+  const { quizId } = req.params;
+
+  await quizService.permanentlyDeleteQuiz(client.id, quizId);
+
+  return res.sendStatus(204);
+});
+
 const retrieveQuiz = asyncHandler(async (req, res) => {
   const client = req.client;
   const { quizId } = req.params;
@@ -102,12 +176,13 @@ const retrieveQuiz = asyncHandler(async (req, res) => {
 
 const retrieveQuizzes = asyncHandler(async (req, res) => {
   const client = req.client;
-  const { page = 1, limit = 20 } = req.query;
+  const { page, limit, status } = req.query;
 
   const { quizzes, pagination } = await quizService.retrieveQuizzes(
     client.id,
     page,
-    limit
+    limit,
+    status
   );
 
   return res.status(200).json({
@@ -177,6 +252,12 @@ module.exports = {
   createQuiz,
   updateQuiz,
   publishQuiz,
+  unpublishQuiz,
+  archiveQuiz,
+  unarchiveQuiz,
+  deletedQuiz,
+  restoreQuiz,
+  permanentlyDeleteQuiz,
   retrieveQuiz,
   retrieveQuizzes,
   addQuestionToQuiz,

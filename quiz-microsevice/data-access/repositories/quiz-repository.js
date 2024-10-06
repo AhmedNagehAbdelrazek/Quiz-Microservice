@@ -10,7 +10,7 @@ const createQuiz = async (
   attemptLimit,
   dueDate,
   passingScore,
-  isPublished
+  status
 ) => {
   const { Quiz } = getModelsForClient(clientId);
 
@@ -23,7 +23,7 @@ const createQuiz = async (
     attemptLimit,
     dueDate,
     passingScore,
-    isPublished,
+    status,
   });
 
   return toDTO(quiz);
@@ -53,18 +53,18 @@ const retrieveQuiz = async (clientId, id) => {
   return quiz ? toDTO(quiz) : null;
 };
 
-const retrieveQuizzes = async (clientId, skip, limit) => {
+const retrieveQuizzes = async (clientId, skip, limit, status) => {
   const { Quiz } = getModelsForClient(clientId);
 
-  const quizzes = await Quiz.find().skip(skip).limit(limit);
+  const quizzes = await Quiz.find({ status }).skip(skip).limit(limit);
 
   return quizzes.map(toDTO);
 };
 
-const countQuizzes = (clientId) => {
+const countQuizzes = (clientId, status) => {
   const { Quiz } = getModelsForClient(clientId);
 
-  return Quiz.countDocuments({});
+  return Quiz.countDocuments({ status });
 };
 
 const toDTO = ({
@@ -77,7 +77,7 @@ const toDTO = ({
   attemptLimit,
   dueDate,
   passingScore,
-  isPublished,
+  status,
 }) => {
   return {
     id: _id.toString(),
@@ -89,7 +89,7 @@ const toDTO = ({
     attemptLimit,
     dueDate,
     passingScore,
-    isPublished,
+    status,
   };
 };
 

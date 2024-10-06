@@ -10,8 +10,8 @@ const {
   createClient,
   renameClient,
   regenerateClientCredentials,
-  enableClient,
-  disableClient,
+  activateClient,
+  deactivateClient,
   retrieveClients,
 } = require("./actions");
 
@@ -71,15 +71,15 @@ cli
           break;
         }
 
-        case "enable-client": {
+        case "activate-client": {
           const [id] = args;
-          await enableClient(id);
+          await activateClient(id);
           break;
         }
 
-        case "disable-client": {
+        case "deactivate-client": {
           const [id] = args;
-          await disableClient(id);
+          await deactivateClient(id);
           break;
         }
 

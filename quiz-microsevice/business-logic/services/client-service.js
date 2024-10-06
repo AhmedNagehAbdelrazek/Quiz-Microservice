@@ -2,11 +2,12 @@ const validator = require("validator");
 const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 
+const { ClientStatusTypes } = require("../enums");
 const { ValidationError, NotExistError } = require("../errors/common");
 
 const { clientRepository } = require("../../data-access/repositories");
 
-const validatId = async (id) => {
+const validateId = async (id) => {
   if (!validator.isMongoId(id)) {
     throw new ValidationError("Invalid client id, it must be a MongoId.");
   }
@@ -23,24 +24,6 @@ const validateName = async (name) => {
   }
 };
 
-const createClient = async (name, isEnabled = true) => {
-  await validateName(name);
-
-  const clientId = crypto.randomBytes(20).toString("hex");
-  const clientSecret = crypto.randomBytes(20).toString("hex");
-
-  const clientSecretHash = bcrypt.hashSync(clientSecret, bcrypt.genSaltSync());
-
-  await clientRepository.createClient(
-    name,
-    clientId,
-    clientSecretHash,
-    isEnabled
-  );
-
-  return { clientId, clientSecret };
-};
-
 const validatePage = (page) => {
   if (!validator.isInt(String(page), { min: 0 })) {
     throw new ValidationError("Invalid 'page', it must be a positive integer.");
@@ -55,8 +38,26 @@ const validateLimit = (limit) => {
   }
 };
 
+const createClient = async (name) => {
+  await validateName(name);
+
+  const clientId = crypto.randomBytes(20).toString("hex");
+  const clientSecret = crypto.randomBytes(20).toString("hex");
+
+  const clientSecretHash = bcrypt.hashSync(clientSecret, bcrypt.genSaltSync());
+
+  await clientRepository.createClient(
+    name,
+    clientId,
+    clientSecretHash,
+    ClientStatusTypes.ACTIVE
+  );
+
+  return { clientId, clientSecret };
+};
+
 const renameClient = async (id, name) => {
-  await validatId(id);
+  await validateId(id);
   await validateName(name);
 
   const client = await clientRepository.updateClient(id, { name });
@@ -69,7 +70,7 @@ const renameClient = async (id, name) => {
 };
 
 const regenerateClientCredentials = async (id) => {
-  await validatId(id);
+  await validateId(id);
 
   const clientId = crypto.randomBytes(20).toString("hex");
   const clientSecret = crypto.randomBytes(20).toString("hex");
@@ -88,10 +89,12 @@ const regenerateClientCredentials = async (id) => {
   return { clientId, clientSecret };
 };
 
-const enableClient = async (id) => {
-  await validatId(id);
+const activateClient = async (id) => {
+  await validateId(id);
 
-  const client = await clientRepository.updateClient(id, { isEnabled: true });
+  const client = await clientRepository.updateClient(id, {
+    status: ClientStatusTypes.ACTIVE,
+  });
 
   if (!client) {
     throw new NotExistError("There is no client with this id.");
@@ -100,10 +103,12 @@ const enableClient = async (id) => {
   return client;
 };
 
-const disableClient = async (id) => {
-  await validatId(id);
+const deactivateClient = async (id) => {
+  await validateId(id);
 
-  const client = await clientRepository.updateClient(id, { isEnabled: false });
+  const client = await clientRepository.updateClient(id, {
+    status: ClientStatusTypes.INACTIVE,
+  });
 
   if (!client) {
     throw new NotExistError("There is no client with this id.");
@@ -113,7 +118,7 @@ const disableClient = async (id) => {
 };
 
 const retrieveClientById = async (id) => {
-  validatId(id);
+  validateId(id);
 
   const client = await clientRepository.retrieveClientById(id);
 
@@ -153,8 +158,8 @@ module.exports = {
   createClient,
   renameClient,
   regenerateClientCredentials,
-  enableClient,
-  disableClient,
+  activateClient,
+  deactivateClient,
   retrieveClientById,
   retrieveClientByClientId,
   retrieveClients,

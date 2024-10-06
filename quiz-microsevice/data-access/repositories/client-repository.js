@@ -1,11 +1,11 @@
 const Client = require("../models/client");
 
-const createClient = async (name, clientId, clientSecretHash, isEnabled) => {
+const createClient = async (name, clientId, clientSecretHash, status) => {
   const client = await Client.create({
     name,
     clientId,
     clientSecretHash,
-    isEnabled,
+    status,
   });
 
   return toDTO(client);
@@ -41,8 +41,8 @@ const countClients = () => {
   return Client.countDocuments();
 };
 
-const toDTO = ({ _id, name, clientId, clientSecretHash, isEnabled }) => {
-  return { id: _id.toString(), name, clientId, clientSecretHash, isEnabled };
+const toDTO = ({ _id, name, clientId, clientSecretHash, status }) => {
+  return { id: _id.toString(), name, clientId, clientSecretHash, status };
 };
 
 module.exports = {

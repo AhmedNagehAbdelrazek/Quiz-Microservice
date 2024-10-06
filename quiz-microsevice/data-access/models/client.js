@@ -1,5 +1,7 @@
 const mongoose = require("mongoose");
 
+const { ClientStatusTypes } = require("../../business-logic/enums");
+
 const ClientSchema = new mongoose.Schema(
   {
     name: {
@@ -14,9 +16,10 @@ const ClientSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    isEnabled: {
-      type: Boolean,
-      default: true,
+    status: {
+      type: String,
+      enum: Object.values(ClientStatusTypes),
+      default: ClientStatusTypes.ACTIVE,
     },
   },
   {
