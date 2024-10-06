@@ -1,7 +1,3 @@
-class NotExistError extends Error {
-  constructor(message = "Not found error.") {
-    super(message);
-  }
-}
+class NotExistError extends Error {}
 
 module.exports = NotExistError;

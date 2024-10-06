@@ -1,16 +1,15 @@
 const createClient = require("./create-client");
-const retrieveAllClients = require('./list-clients');
-const regenerateClientCredentials = require('./regenerate-client-credentials')
-const renameClient = require('./rename-client');
-const disableClient = require('./disable-client');
-const enableClient = require('./enable-client');
+const renameClient = require("./rename-client");
+const regenerateClientCredentials = require("./regenerate-client-credentials");
+const activateClient = require("./activate-client");
+const deactivateClient = require("./deactivate-client");
+const retrieveClients = require("./retrieve-clients");
 
-
-module.exports = { 
-    createClient, 
-    retrieveAllClients, 
-    regenerateClientCredentials, 
-    renameClient,
-    disableClient,
-    enableClient,
- };
+module.exports = {
+  createClient,
+  renameClient,
+  regenerateClientCredentials,
+  activateClient,
+  deactivateClient,
+  retrieveClients,
+};

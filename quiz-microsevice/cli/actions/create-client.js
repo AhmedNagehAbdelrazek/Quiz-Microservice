@@ -1,9 +1,9 @@
 const { clientService } = require("../../business-logic/services");
 
 const createClient = async (name) => {
-  const { clientId, clientSecret } = await clientService.createOne(name);
+  const credentials = await clientService.createClient(name);
 
-  console.log({ clientId, clientSecret });
+  console.log(credentials);
 };
 
 module.exports = createClient;

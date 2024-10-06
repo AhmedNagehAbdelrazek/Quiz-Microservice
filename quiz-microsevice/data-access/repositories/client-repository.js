@@ -1,75 +1,55 @@
 const Client = require("../models/client");
-const { NotExistError } = require("../../business-logic/errors/common");
 
-const toDTO = ({ _id, name, clientId, clientSecretHash, isEnabled}) => {
-  return { id: _id.toString(), name, clientId, clientSecretHash, isEnabled};
-};
-
-
-const createOne = async (name, clientId, clientSecretHash) => {
-  const client = await Client.create({ name, clientId, clientSecretHash });
+const createClient = async (name, clientId, clientSecretHash, status) => {
+  const client = await Client.create({
+    name,
+    clientId,
+    clientSecretHash,
+    status,
+  });
 
   return toDTO(client);
 };
 
-const retrieveOneByClientId = async (clientId) => {
+const updateClient = async (id, update) => {
+  const client = await Client.findByIdAndUpdate(id, update, {
+    new: true,
+  });
+
+  return client ? toDTO(client) : null;
+};
+
+const retrieveClientById = async (id) => {
+  const client = await Client.findOneById(id);
+
+  return client ? toDTO(client) : null;
+};
+
+const retrieveClientByClientId = async (clientId) => {
   const client = await Client.findOne({ clientId });
 
   return client ? toDTO(client) : null;
 };
 
-const retrieveAllClients = async () => {
-  const clients = await Client.find();
+const retrieveClients = async (skip, limit) => {
+  const clients = await Client.find().skip(skip).limit(limit);
 
   return clients.map(toDTO);
 };
 
-const updateClientCredentials = async (id, clientId, clientSecretHash) => {
-  const client = await Client.findByIdAndUpdate(
-    { _id: id },
-    { clientId, clientSecretHash },
-    { new: true }
-  );
-
-  if (!client) {
-    return null;
-  }
-
-  return toDTO(client);
+const countClients = () => {
+  return Client.countDocuments();
 };
 
-
-const renameClient = async(id, name) =>{
-  const client = await Client.findByIdAndUpdate({_id: id}, {name: name}, {new: true})
-  if(!client){
-    return null;
-  };
-  return toDTO(client);
+const toDTO = ({ _id, name, clientId, clientSecretHash, status }) => {
+  return { id: _id.toString(), name, clientId, clientSecretHash, status };
 };
-
-const disableClient = async(id) => {
-  const client = await Client.findByIdAndUpdate({_id: id}, {isEnabled: false}, {new: true});
-  if(!client){
-    return null;
-  };
-  return toDTO(client);
-
-}
-const enableClient = async(id) => {
-  const client = await Client.findByIdAndUpdate({_id: id}, {isEnabled: true}, {new: true});
-  if(!client){
-    return null;
-  };
-  return toDTO(client);
-
-}
 
 module.exports = {
-  createOne,
-  retrieveOneByClientId,
-  retrieveAllClients,
-  updateClientCredentials,
-  renameClient,
-  disableClient,
-  enableClient,
+  createClient,
+  updateClient,
+  retrieveClientById,
+  retrieveClientByClientId,
+  retrieveClients,
+  countClients,
 };

@@ -1,23 +1,31 @@
 const mongoose = require("mongoose");
 
-const ClientSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true,
+const { ClientStatusTypes } = require("../../business-logic/enums");
+
+const ClientSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+    },
+    clientId: {
+      type: String,
+      required: true,
+    },
+    clientSecretHash: {
+      type: String,
+      required: true,
+    },
+    status: {
+      type: String,
+      enum: Object.values(ClientStatusTypes),
+      default: ClientStatusTypes.ACTIVE,
+    },
   },
-  clientId: {
-    type: String,
-    required: true,
-  },
-  clientSecretHash: {
-    type: String,
-    required: true,
-  },
-  isEnabled: {
-    type: Boolean, 
-    default: false,
+  {
+    timestamps: true,
   }
-});
+);
 
 const Client = mongoose.model("Client", ClientSchema);
 

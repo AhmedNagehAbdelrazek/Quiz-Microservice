@@ -1,3 +1,3 @@
-const QuizAlreadyPublishedError = require("./quiz-already-published-error");
+const InvalidQuizStatusError = require("./invalid-quiz-status-error");
 
-module.exports = { QuizAlreadyPublishedError };
+module.exports = { InvalidQuizStatusError };
