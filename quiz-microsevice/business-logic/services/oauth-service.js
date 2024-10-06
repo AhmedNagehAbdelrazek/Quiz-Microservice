@@ -34,7 +34,7 @@ const generateToken = async (grantType, clientId, clientSecret) => {
 
   if (
     !client ||
-    !client.enabled ||
+    !client.isEnabled ||
     !bcrypt.compareSync(clientSecret, client.clientSecretHash)
   ) {
     throw new InvalidClientError("Incorrect 'client_id' or 'client_secret'.");

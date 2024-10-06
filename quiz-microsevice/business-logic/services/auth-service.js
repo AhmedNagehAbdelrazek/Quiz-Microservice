@@ -12,7 +12,7 @@ const authenticate = async (token) => {
 
     const client = await clientRepository.retrieveClientByClientId(clientId);
 
-    if (!client || !client.enabled) {
+    if (!client || !client.isEnabled) {
       throw new Error();
     }
 

@@ -5,7 +5,7 @@ const { QuestionsTypes } = require("../../business-logic/enums");
 const generateQuestionModelForClient = (id) => {
   const questionSchema = new mongoose.Schema(
     {
-      quiz: {
+      quizId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: `Quiz_${id}`,
         required: true,
@@ -24,7 +24,7 @@ const generateQuestionModelForClient = (id) => {
         default: null,
       },
       answer: {
-        type: String,
+        type: mongoose.Schema.Types.Mixed,
         required: true,
       },
       points: {

@@ -9,16 +9,18 @@ router
   .post(quizController.createQuiz)
   .get(quizController.retrieveQuizzes);
 
-router.route("/:quizId").get(quizController.retrieveQuiz);
+router
+  .route("/:quizId")
+  .get(quizController.retrieveQuiz)
+  .patch(quizController.updateQuiz);
 
 router.route("/:quizId/publish").post(quizController.publishQuiz);
 
 router.route("/:quizId/questions").post(quizController.addQuestionToQuiz);
 
-router.route("/:quizId/questions").post(quizController.addQuestionToQuiz);
-
-router.route("/questions/:questionId").delete(quizController.deleteOneQuestionForQuiz);
-
-router.route("/questions/:questionId").put(quizController.updateQuestion);
+router
+  .route("/:quizId/questions/:questionId")
+  .patch(quizController.updateQuestionInQuiz)
+  .delete(quizController.removeQuestionFormQuiz);
 
 module.exports = router;
