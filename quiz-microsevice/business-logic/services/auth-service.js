@@ -1,26 +1,23 @@
 const jwt = require("jsonwebtoken");
 
+const { ClientStatus } = require("../enums");
 const { InvalidOrExpiredTokenError } = require("../errors/auth");
 
 const { clientRepository } = require("../../data-access/repositories");
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
-const authenticate = async (token) => {
+const authenticateClientByToken = async (token) => {
   try {
-    const decoded = jwt.decode(token, JWT_SECRET);
+    const { clientId } = jwt.decode(token, JWT_SECRET);
 
-    const client = await clientRepository.retrieveOneByClientId(
-      decoded.clientId
-    );
+    const client = await clientRepository.retrieveClientByOAuthId(clientId);
 
-    if (!client) {
+    if (!client || client.status === ClientStatus.DELETED) {
       throw new Error();
-    };
-    // This is not tested yet, there is nothing to test on.
-    if (client.isEnabled === false) {
-      throw new Error("Client is disabled. Cannot be authenticated.");
-    };
+    }
+
+    delete client.oauthSecretHash;
 
     return client;
   } catch (error) {
@@ -28,4 +25,4 @@ const authenticate = async (token) => {
   }
 };
 
-module.exports = { authenticate };
+module.exports = { authenticateClientByToken };
