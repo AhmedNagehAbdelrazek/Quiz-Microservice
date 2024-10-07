@@ -1,8 +1,11 @@
 const validator = require("validator");
 
-const { DifficultyTypes, QuizStatusTypes } = require("../enums");
-const { ValidationError, NotExistError } = require("../errors/common");
-const { InvalidQuizStatusError } = require("../errors/quiz");
+const { DifficultyType, QuizStatus, DeleteType } = require("../enums");
+const {
+  ValidationError,
+  NotExistError,
+  InvalidStatusError,
+} = require("../errors/common");
 const questionService = require("../services/question-service");
 
 const { quizRepository } = require("../../data-access/repositories");
@@ -47,7 +50,7 @@ const validateCategories = (categories) => {
 };
 
 const validateDifficulty = (difficulty) => {
-  if (!Object.values(DifficultyTypes).includes(difficulty)) {
+  if (!Object.values(DifficultyType).includes(difficulty)) {
     throw new ValidationError("Invalid 'difficulty'.");
   }
 };
@@ -111,7 +114,7 @@ const validateLimit = (limit) => {
 };
 
 const validateStatus = (status) => {
-  if (!Object.values(QuizStatusTypes).includes(status)) {
+  if (!Object.values(QuizStatus).includes(status)) {
     throw new ValidationError("Invalid 'status'.");
   }
 };
@@ -121,7 +124,7 @@ const createQuiz = async (
   title,
   description,
   categories = [],
-  difficulty = DifficultyTypes.EASY,
+  difficulty = DifficultyType.EASY,
   timeLimit = null,
   attemptLimit = null,
   dueDate = null,
@@ -148,7 +151,7 @@ const createQuiz = async (
     attemptLimit,
     dueDate,
     passingScore,
-    QuizStatusTypes.DRAFTED
+    QuizStatus.DRAFTED
   );
 
   const createdQuestions = [];
@@ -157,7 +160,7 @@ const createQuiz = async (
     const { type, text, options, answer, points } = questions[i];
 
     try {
-      const createdQuestion = await questionService.addQuestionToQuiz(
+      const createdQuestion = await questionService.createQuizQuestion(
         clientId,
         quiz.id,
         type,
@@ -169,7 +172,7 @@ const createQuiz = async (
 
       createdQuestions.push(createdQuestion);
     } catch (error) {
-      await questionService.removeAllQuestionsFormQuiz(clientId, quiz.id);
+      await questionService.permanentlyDeleteQuizQuestions(clientId, quiz.id);
       await quizRepository.deleteQuiz(clientId, quiz.id);
 
       throw new ValidationError(
@@ -203,10 +206,8 @@ const updateQuiz = async (
     throw new NotExistError("There is no quiz with this id.");
   }
 
-  if (quiz.status !== QuizStatusTypes.DRAFTED) {
-    throw new InvalidQuizStatusError(
-      "The quiz is not in draft mode cannot be updated."
-    );
+  if (quiz.status !== QuizStatus.DRAFTED) {
+    throw new InvalidStatusError("The quiz is not drafted cannot be updated.");
   }
 
   if (title === undefined) title = quiz.title;
@@ -242,145 +243,115 @@ const updateQuiz = async (
 const publishQuiz = async (clientId, quizId) => {
   validateId(quizId);
 
-  let quiz = await quizRepository.retrieveQuiz(clientId, quizId);
+  const quiz = await quizRepository.retrieveQuiz(clientId, quizId);
 
   if (!quiz) {
     throw new NotExistError("There is no quiz with this id.");
   }
 
-  if (quiz.status === QuizStatusTypes.PUBLISHED) {
-    throw new InvalidQuizStatusError(
-      "The quiz is already published and cannot be published again."
-    );
+  if (quiz.status === QuizStatus.PUBLISHED) {
+    throw new InvalidStatusError("The quiz is already published.");
   }
 
-  quiz = await quizRepository.updateQuiz(clientId, quizId, {
-    status: QuizStatusTypes.PUBLISHED,
+  return quizRepository.updateQuiz(clientId, quizId, {
+    status: QuizStatus.PUBLISHED,
   });
-
-  return quiz;
 };
 
 const unpublishQuiz = async (clientId, quizId) => {
   validateId(quizId);
 
-  let quiz = await quizRepository.retrieveQuiz(clientId, quizId);
+  const quiz = await quizRepository.retrieveQuiz(clientId, quizId);
 
   if (!quiz) {
     throw new NotExistError("There is no quiz with this id.");
   }
 
-  if (quiz.status === QuizStatusTypes.DRAFTED) {
-    throw new InvalidQuizStatusError("The quiz is already in draft mode.");
+  if (quiz.status === QuizStatus.DRAFTED) {
+    throw new InvalidStatusError("This quiz is already drafted.");
   }
 
-  quiz = await quizRepository.updateQuiz(clientId, quizId, {
-    status: QuizStatusTypes.DRAFTED,
+  return quizRepository.updateQuiz(clientId, quizId, {
+    status: QuizStatus.DRAFTED,
   });
-
-  return quiz;
 };
 
 const archiveQuiz = async (clientId, quizId) => {
   validateId(quizId);
 
-  let quiz = await quizRepository.retrieveQuiz(clientId, quizId);
+  const quiz = await quizRepository.retrieveQuiz(clientId, quizId);
 
   if (!quiz) {
     throw new NotExistError("There is no quiz with this id.");
   }
 
-  if (quiz.status === QuizStatusTypes.ARCHIVED) {
-    throw new InvalidQuizStatusError(
-      "The quiz is already archived and cannot be archived again."
-    );
+  if (quiz.status === QuizStatus.ARCHIVED) {
+    throw new InvalidStatusError("The quiz is already archived.");
   }
 
-  quiz = await quizRepository.updateQuiz(clientId, quizId, {
-    status: QuizStatusTypes.ARCHIVED,
+  return quizRepository.updateQuiz(clientId, quizId, {
+    status: QuizStatus.ARCHIVED,
   });
-
-  return quiz;
 };
 
 const unarchieQuiz = async (clientId, quizId) => {
   validateId(quizId);
 
-  let quiz = await quizRepository.retrieveQuiz(clientId, quizId);
+  const quiz = await quizRepository.retrieveQuiz(clientId, quizId);
 
   if (!quiz) {
     throw new NotExistError("There is no quiz with this id.");
   }
 
-  if (quiz.status === QuizStatusTypes.DRAFTED) {
-    throw new InvalidQuizStatusError("The quiz is already in draft mode.");
+  if (quiz.status === QuizStatus.DRAFTED) {
+    throw new InvalidStatusError("This quiz is already drafted.");
   }
 
-  quiz = await quizRepository.updateQuiz(clientId, quizId, {
-    status: QuizStatusTypes.DRAFTED,
+  return quizRepository.updateQuiz(clientId, quizId, {
+    status: QuizStatus.DRAFTED,
   });
-
-  return quiz;
 };
 
-const deleteQuiz = async (clientId, quizId) => {
+const deleteQuiz = async (clientId, quizId, type = DeleteType.SOFT) => {
   validateId(quizId);
 
-  let quiz = await quizRepository.retrieveQuiz(clientId, quizId);
+  const quiz = await quizRepository.retrieveQuiz(clientId, quizId);
 
   if (!quiz) {
     throw new NotExistError("There is no quiz with this id.");
   }
 
-  if (quiz.status === QuizStatusTypes.DELETED) {
-    throw new InvalidQuizStatusError(
-      "The quiz is already deleted and cannot be deleted again."
-    );
+  if (type === DeleteType.SOFT) {
+    if (quiz.status === QuizStatus.DELETED) {
+      throw new InvalidStatusError("This quiz is already deleted.");
+    }
+
+    return quizRepository.updateQuiz(clientId, quizId, {
+      status: QuizStatus.DELETED,
+    });
   }
 
-  quiz = await quizRepository.updateQuiz(clientId, quizId, {
-    status: QuizStatusTypes.DELETED,
-  });
-
-  return quiz;
+  if (type === DeleteType.HARD) {
+    return quizRepository.deleteQuiz(clientId, quizId);
+  }
 };
 
 const restoreQuiz = async (clientId, quizId) => {
   validateId(quizId);
 
-  let quiz = await quizRepository.retrieveQuiz(clientId, quizId);
+  const quiz = await quizRepository.retrieveQuiz(clientId, quizId);
 
   if (!quiz) {
     throw new NotExistError("There is no quiz with this id.");
   }
 
-  if (quiz.status === QuizStatusTypes.DRAFTED) {
-    throw new InvalidQuizStatusError("The quiz is already in draft mode.");
+  if (quiz.status === QuizStatus.DRAFTED) {
+    throw new InvalidStatusError("This quiz is already drafted.");
   }
 
-  quiz = await quizRepository.updateQuiz(clientId, quizId, {
-    status: QuizStatusTypes.DRAFTED,
+  return quizRepository.updateQuiz(clientId, quizId, {
+    status: QuizStatus.DRAFTED,
   });
-
-  return quiz;
-};
-
-const permanentlyDeleteQuiz = async (clientId, quizId) => {
-  validateId(quizId);
-
-  let quiz = await quizRepository.retrieveQuiz(clientId, quizId);
-
-  if (!quiz) {
-    throw new NotExistError("There is no quiz with this id.");
-  }
-
-  if (quiz.status !== QuizStatusTypes.DELETED) {
-    throw new InvalidQuizStatusError(
-      "The quiz must be deleted before it can be permanently deleted."
-    );
-  }
-
-  await quizRepository.deleteQuiz(clientId, quizId);
 };
 
 const retrieveQuiz = async (clientId, quizId) => {
@@ -392,7 +363,7 @@ const retrieveQuiz = async (clientId, quizId) => {
     throw new NotExistError("There is no quiz with this id.");
   }
 
-  const questions = await questionService.retrieveAllQuestionsFromQuiz(
+  const questions = await questionService.retrieveQuizQuestions(
     clientId,
     quizId
   );
@@ -404,7 +375,7 @@ const retrieveQuizzes = async (
   clientId,
   page = 1,
   limit = 20,
-  status = QuizStatusTypes.PUBLISHED
+  status = QuizStatus.PUBLISHED
 ) => {
   validatePage(page);
   validateLimit(limit);
@@ -429,7 +400,7 @@ const retrieveQuizzes = async (
   };
 };
 
-const addQuestionToQuiz = async (
+const createQuizQuestion = async (
   clientId,
   quizId,
   type,
@@ -446,7 +417,11 @@ const addQuestionToQuiz = async (
     throw new NotExistError("There is no quiz with this id.");
   }
 
-  return questionService.addQuestionToQuiz(
+  if (quiz.status !== QuizStatus.DRAFTED) {
+    throw new InvalidStatusError("The quiz is not drafted cannot be updated.");
+  }
+
+  return questionService.createQuizQuestion(
     clientId,
     quizId,
     type,
@@ -457,7 +432,7 @@ const addQuestionToQuiz = async (
   );
 };
 
-const updateQuestionInQuiz = async (
+const updateQuizQuestion = async (
   clientId,
   quizId,
   questionId,
@@ -471,7 +446,11 @@ const updateQuestionInQuiz = async (
     throw new NotExistError("There is no quiz with this id.");
   }
 
-  return questionService.updateQuestionInQuiz(clientId, quizId, questionId, {
+  if (quiz.status !== QuizStatus.DRAFTED) {
+    throw new InvalidStatusError("The quiz is not drafted cannot be updated.");
+  }
+
+  return questionService.updateQuizQuestion(clientId, quizId, questionId, {
     type,
     text,
     options,
@@ -480,7 +459,7 @@ const updateQuestionInQuiz = async (
   });
 };
 
-const removeQuestionFromQuiz = async (clientId, quizId, questionId) => {
+const deleteQuizQuestion = async (clientId, quizId, questionId, type) => {
   validateId(quizId);
 
   const quiz = await quizRepository.retrieveQuiz(clientId, quizId);
@@ -489,7 +468,39 @@ const removeQuestionFromQuiz = async (clientId, quizId, questionId) => {
     throw new NotExistError("There is no quiz with this id.");
   }
 
-  await questionService.removeQuestionFormQuiz(clientId, quizId, questionId);
+  if (quiz.status !== QuizStatus.DRAFTED) {
+    throw new InvalidStatusError("The quiz is not drafted cannot be updated.");
+  }
+
+  await questionService.deleteQuizQuestion(clientId, quizId, questionId, type);
+};
+
+const restoreQuizQuestion = async (clientId, quizId, questionId) => {
+  validateId(quizId);
+
+  const quiz = await quizRepository.retrieveQuiz(clientId, quizId);
+
+  if (!quiz) {
+    throw new NotExistError("There is no quiz with this id.");
+  }
+
+  if (quiz.status !== QuizStatus.DRAFTED) {
+    throw new InvalidStatusError("The quiz is not drafted cannot be updated.");
+  }
+
+  return questionService.restoreQuizQuestion(clientId, quizId, questionId);
+};
+
+const retrieveQuizQuestions = async (clientId, quizId, status) => {
+  validateId(quizId);
+
+  const quiz = await quizRepository.retrieveQuiz(clientId, quizId);
+
+  if (!quiz) {
+    throw new NotExistError("There is no quiz with this id.");
+  }
+
+  return questionService.retrieveQuizQuestions(clientId, quizId, status);
 };
 
 module.exports = {
@@ -501,10 +512,11 @@ module.exports = {
   unarchieQuiz,
   deleteQuiz,
   restoreQuiz,
-  permanentlyDeleteQuiz,
   retrieveQuiz,
   retrieveQuizzes,
-  addQuestionToQuiz,
-  updateQuestionInQuiz,
-  removeQuestionFromQuiz,
+  createQuizQuestion,
+  updateQuizQuestion,
+  deleteQuizQuestion,
+  restoreQuizQuestion,
+  retrieveQuizQuestions,
 };

@@ -12,7 +12,8 @@ router
 router
   .route("/:quizId")
   .get(quizController.retrieveQuiz)
-  .patch(quizController.updateQuiz);
+  .patch(quizController.updateQuiz)
+  .delete(quizController.deletedQuiz);
 
 router.post("/:quizId/publish", quizController.publishQuiz);
 
@@ -22,20 +23,21 @@ router.post("/:quizId/archive", quizController.archiveQuiz);
 
 router.post("/:quizId/unarchive", quizController.unarchiveQuiz);
 
-router.delete("/:quizId/delete", quizController.deletedQuiz);
-
 router.post("/:quizId/restore", quizController.restoreQuiz);
 
-router.delete(
-  "/:quizId/permanently-delete",
-  quizController.permanentlyDeleteQuiz
-);
-
-router.post("/:quizId/questions", quizController.addQuestionToQuiz);
+router
+  .route("/:quizId/questions")
+  .post(quizController.createQuizQuestion)
+  .get(quizController.retrieveQuizQuestions);
 
 router
   .route("/:quizId/questions/:questionId")
-  .patch(quizController.updateQuestionInQuiz)
-  .delete(quizController.removeQuestionFormQuiz);
+  .patch(quizController.updateQuizQuestion)
+  .delete(quizController.deleteQuizQuestion);
+
+router.post(
+  "/:quizId/questions/:questionId/restore",
+  quizController.restoreQuizQuestion
+);
 
 module.exports = router;

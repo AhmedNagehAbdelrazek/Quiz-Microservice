@@ -1,11 +1,15 @@
-const ClientStatusTypes = require("./client-status-types");
-const QuizStatusTypes = require("./quiz-status-types");
-const DifficultyTypes = require("./difficulty-types");
-const QuestionsTypes = require("./question-types");
+const ClientStatus = require("./client-status");
+const QuizStatus = require("./quiz-status");
+const QuestionStatus = require("./question-status");
+const QuestionsType = require("./question-type");
+const DifficultyType = require("./difficulty-type");
+const DeleteType = require("./delete-type");
 
 module.exports = {
-  ClientStatusTypes,
-  QuizStatusTypes,
-  DifficultyTypes,
-  QuestionsTypes,
+  ClientStatus,
+  QuizStatus,
+  QuestionStatus,
+  QuestionsType,
+  DifficultyType,
+  DeleteType,
 };

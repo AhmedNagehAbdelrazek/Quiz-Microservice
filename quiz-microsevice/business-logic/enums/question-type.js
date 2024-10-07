@@ -1,4 +1,4 @@
-const QuestionsTypes = Object.freeze({
+const QuestionsType = Object.freeze({
   SHORT_ANSWER: "short-answer",
   LONG_ANSWER: "long-answer",
   MILTIPLE_CHOICE: "multiple-choice",
@@ -6,4 +6,4 @@ const QuestionsTypes = Object.freeze({
   FILL_IN_THE_BLANK: "fill-in-the-blank",
 });
 
-module.exports = QuestionsTypes;
+module.exports = QuestionsType;

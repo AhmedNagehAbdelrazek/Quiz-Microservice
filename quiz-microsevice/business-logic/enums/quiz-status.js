@@ -1,8 +1,8 @@
-const QuizStatusTypes = Object.freeze({
+const QuizStatus = Object.freeze({
   PUBLISHED: "published",
   DRAFTED: "drafted",
   DELETED: "deleted",
   ARCHIVED: "archived",
 });
 
-module.exports = QuizStatusTypes;
+module.exports = QuizStatus;

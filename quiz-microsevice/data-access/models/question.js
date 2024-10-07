@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const { QuestionsTypes } = require("../../business-logic/enums");
+const { QuestionsType, QuestionStatus } = require("../../business-logic/enums");
 
 const generateQuestionModelForClient = (id) => {
   const questionSchema = new mongoose.Schema(
@@ -12,8 +12,8 @@ const generateQuestionModelForClient = (id) => {
       },
       type: {
         type: String,
-        enum: Object.values(QuestionsTypes),
-        default: QuestionsTypes.SHORT_ANSWER,
+        enum: Object.values(QuestionsType),
+        default: QuestionsType.SHORT_ANSWER,
       },
       text: {
         type: String,
@@ -30,6 +30,11 @@ const generateQuestionModelForClient = (id) => {
       points: {
         type: Number,
         default: 1,
+      },
+      status: {
+        type: String,
+        enum: Object.values(QuestionStatus),
+        default: QuestionStatus.ACTIVE,
       },
     },
     { timestamps: true }

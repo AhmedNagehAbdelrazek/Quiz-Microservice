@@ -131,8 +131,9 @@ const unarchiveQuiz = asyncHandler(async (req, res) => {
 const deletedQuiz = asyncHandler(async (req, res) => {
   const client = req.client;
   const { quizId } = req.params;
+  const { type } = req.query;
 
-  const quiz = await quizService.deleteQuiz(client.id, quizId);
+  await quizService.deleteQuiz(client.id, quizId, type);
 
   return res.sendStatus(204);
 });
@@ -149,15 +150,6 @@ const restoreQuiz = asyncHandler(async (req, res) => {
       quiz: quiz,
     },
   });
-});
-
-const permanentlyDeleteQuiz = asyncHandler(async (req, res) => {
-  const client = req.client;
-  const { quizId } = req.params;
-
-  await quizService.permanentlyDeleteQuiz(client.id, quizId);
-
-  return res.sendStatus(204);
 });
 
 const retrieveQuiz = asyncHandler(async (req, res) => {
@@ -196,12 +188,12 @@ const retrieveQuizzes = asyncHandler(async (req, res) => {
   });
 });
 
-const addQuestionToQuiz = asyncHandler(async (req, res) => {
+const createQuizQuestion = asyncHandler(async (req, res) => {
   const client = req.client;
   const { quizId } = req.params;
   const { type, text, options, answer, points } = req.body;
 
-  const question = await quizService.addQuestionToQuiz(
+  const question = await quizService.createQuizQuestion(
     client.id,
     quizId,
     type,
@@ -219,12 +211,12 @@ const addQuestionToQuiz = asyncHandler(async (req, res) => {
   });
 });
 
-const updateQuestionInQuiz = asyncHandler(async (req, res) => {
+const updateQuizQuestion = asyncHandler(async (req, res) => {
   const client = req.client;
   const { quizId, questionId } = req.params;
   const { type, text, options, answer, points } = req.body;
 
-  const question = await quizService.updateQuestionInQuiz(
+  const question = await quizService.updateQuizQuestion(
     client.id,
     quizId,
     questionId,
@@ -239,13 +231,51 @@ const updateQuestionInQuiz = asyncHandler(async (req, res) => {
   });
 });
 
-const removeQuestionFormQuiz = asyncHandler(async (req, res) => {
+const deleteQuizQuestion = asyncHandler(async (req, res) => {
+  const client = req.client;
+  const { quizId, questionId } = req.params;
+  const { type } = req.query;
+
+  await quizService.deleteQuizQuestion(client.id, quizId, questionId, type);
+
+  res.status(204).send();
+});
+
+const restoreQuizQuestion = asyncHandler(async (req, res) => {
   const client = req.client;
   const { quizId, questionId } = req.params;
 
-  await quizService.removeQuestionFromQuiz(client.id, quizId, questionId);
+  const question = await quizService.restoreQuizQuestion(
+    client.id,
+    quizId,
+    questionId
+  );
 
-  res.status(204).send();
+  res.status(200).json({
+    success: true,
+    data: {
+      question,
+    },
+  });
+});
+
+const retrieveQuizQuestions = asyncHandler(async (req, res) => {
+  const client = req.client;
+  const { quizId } = req.params;
+  const { status } = req.query;
+
+  const questions = await quizService.retrieveQuizQuestions(
+    client.id,
+    quizId,
+    status
+  );
+
+  res.status(200).json({
+    success: true,
+    data: {
+      questions,
+    },
+  });
 });
 
 module.exports = {
@@ -257,10 +287,11 @@ module.exports = {
   unarchiveQuiz,
   deletedQuiz,
   restoreQuiz,
-  permanentlyDeleteQuiz,
   retrieveQuiz,
   retrieveQuizzes,
-  addQuestionToQuiz,
-  updateQuestionInQuiz,
-  removeQuestionFormQuiz,
+  createQuizQuestion,
+  updateQuizQuestion,
+  deleteQuizQuestion,
+  restoreQuizQuestion,
+  retrieveQuizQuestions,
 };

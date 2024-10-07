@@ -1,7 +1,11 @@
 const validator = require("validator");
 
-const { QuestionsTypes } = require("../enums");
-const { ValidationError, NotExistError } = require("../errors/common");
+const { QuestionsType, QuestionStatus, DeleteType } = require("../enums");
+const {
+  ValidationError,
+  NotExistError,
+  InvalidStatusError,
+} = require("../errors/common");
 
 const { questionRepository } = require("../../data-access/repositories");
 
@@ -12,7 +16,7 @@ const validateId = (id) => {
 };
 
 const validateType = (type) => {
-  if (!Object.values(QuestionsTypes).includes(type)) {
+  if (!Object.values(QuestionsType).includes(type)) {
     throw new ValidationError("Invalid 'type'.");
   }
 };
@@ -30,7 +34,7 @@ const validateText = (text) => {
 
 const validateOptions = (type, options) => {
   switch (type) {
-    case QuestionsTypes.MILTIPLE_CHOICE: {
+    case QuestionsType.MILTIPLE_CHOICE: {
       if (
         !Array.isArray(options) ||
         !options.every((option) => typeof option === "string")
@@ -54,7 +58,7 @@ const validateOptions = (type, options) => {
 
 const validateAnswer = (type, options, answer) => {
   switch (type) {
-    case QuestionsTypes.SHORT_ANSWER: {
+    case QuestionsType.SHORT_ANSWER: {
       if (
         typeof answer !== "string" ||
         !validator.isLength(answer, { min: 1, max: 250 })
@@ -67,7 +71,7 @@ const validateAnswer = (type, options, answer) => {
       break;
     }
 
-    case QuestionsTypes.LONG_ANSWER: {
+    case QuestionsType.LONG_ANSWER: {
       if (
         typeof answer !== "string" ||
         !validator.isLength(answer, { min: 1, max: 500 })
@@ -80,7 +84,7 @@ const validateAnswer = (type, options, answer) => {
       break;
     }
 
-    case QuestionsTypes.MILTIPLE_CHOICE: {
+    case QuestionsType.MILTIPLE_CHOICE: {
       if (!options.includes(answer)) {
         throw new ValidationError(
           "Invalid 'answer', it must be one of the provided options for Multiple-Choice questions."
@@ -90,7 +94,7 @@ const validateAnswer = (type, options, answer) => {
       break;
     }
 
-    case QuestionsTypes.TRUE_FALSE: {
+    case QuestionsType.TRUE_FALSE: {
       if (typeof answer !== "boolean") {
         throw new ValidationError(
           "Invalid 'answer', it must be a boolean for True/False questions."
@@ -100,7 +104,7 @@ const validateAnswer = (type, options, answer) => {
       break;
     }
 
-    case QuestionsTypes.FILL_IN_THE_BLANK: {
+    case QuestionsType.FILL_IN_THE_BLANK: {
       if (
         !Array.isArray(answer) ||
         !answer.every((a) => typeof a === "string")
@@ -123,10 +127,10 @@ const validatePoints = (points) => {
   }
 };
 
-const addQuestionToQuiz = async (
+const createQuizQuestion = async (
   clientId,
   quizId,
-  type = QuestionsTypes.SHORT_ANSWER,
+  type = QuestionsType.SHORT_ANSWER,
   text,
   options = null,
   answer,
@@ -138,7 +142,7 @@ const addQuestionToQuiz = async (
   validateAnswer(type, options, answer);
   validatePoints(points);
 
-  const question = await questionRepository.addQuestionToQuiz(
+  const question = await questionRepository.createQuizQuestion(
     clientId,
     quizId,
     type,
@@ -151,7 +155,7 @@ const addQuestionToQuiz = async (
   return question;
 };
 
-const updateQuestionInQuiz = async (
+const updateQuizQuestion = async (
   clientId,
   quizId,
   questionId,
@@ -159,7 +163,7 @@ const updateQuestionInQuiz = async (
 ) => {
   validateId(questionId);
 
-  const question = await questionRepository.retrieveQuestionFromQuiz(
+  const question = await questionRepository.retrieveQuizQuestion(
     clientId,
     quizId,
     questionId
@@ -181,38 +185,78 @@ const updateQuestionInQuiz = async (
   validateAnswer(type, options, answer);
   validatePoints(points);
 
-  const updatedQuestion = await questionRepository.updateQuestionInQuiz(
-    clientId,
-    quizId,
-    questionId,
-    { type, text, options, answer, points }
-  );
-
-  return updatedQuestion;
+  return questionRepository.updateQuizQuestion(clientId, quizId, questionId, {
+    type,
+    text,
+    options,
+    answer,
+    points,
+  });
 };
 
-const removeQuestionFormQuiz = async (clientId, quizId, questionId) => {
+const deleteQuizQuestion = async (
+  clientId,
+  quizId,
+  questionId,
+  type = DeleteType.SOFT
+) => {
   validateId(questionId);
 
-  const question = await questionRepository.removeQuestionFromQuiz(
+  const question = await questionRepository.retrieveQuizQuestion(
     clientId,
     quizId,
     questionId
   );
 
   if (!question) {
-    throw new NotExistError("There is no question with this id for this quiz.");
+    throw new NotExistError("There is no question with this id.");
+  }
+
+  if (type === DeleteType.SOFT) {
+    if (question.status === QuestionStatus.DELETED) {
+      throw new InvalidStatusError("This question is already deleted.");
+    }
+
+    return questionRepository.updateQuizQuestion(clientId, quizId, questionId, {
+      status: QuestionStatus.DELETED,
+    });
+  }
+
+  if (type === DeleteType.HARD) {
+    return questionRepository.deleteQuizQuestion(clientId, quizId, questionId);
   }
 };
 
-const removeAllQuestionsFormQuiz = async (clientId, quizId) => {
-  await questionRepository.removeAllQuestionsFromQuiz(clientId, quizId);
-};
-
-const retrieveQuestionFromQuiz = async (clientId, quizId, questionId) => {
+const restoreQuizQuestion = async (clientId, quizId, questionId) => {
   validateId(questionId);
 
-  const question = await questionRepository.retrieveQuestionFromQuiz(
+  const question = await questionRepository.updateQuizQuestion(
+    clientId,
+    quizId,
+    questionId
+  );
+
+  if (!question) {
+    throw new NotExistError("There is no question with this id.");
+  }
+
+  if (question.status === QuestionStatus.ACTIVE) {
+    throw new InvalidStatusError("This question is already active.");
+  }
+
+  return questionRepository.updateQuizQuestion(clientId, quizId, questionId, {
+    status: QuestionStatus.ACTIVE,
+  });
+};
+
+const permanentlyDeleteQuizQuestions = async (clientId, quizId) => {
+  await questionRepository.deleteQuizQuestions(clientId, quizId);
+};
+
+const retrieveQuizQuestion = async (clientId, quizId, questionId) => {
+  validateId(questionId);
+
+  const question = await questionRepository.retrieveQuizQuestion(
     clientId,
     quizId,
     questionId
@@ -225,20 +269,24 @@ const retrieveQuestionFromQuiz = async (clientId, quizId, questionId) => {
   return question;
 };
 
-const retrieveAllQuestionsFromQuiz = async (clientId, quizId) => {
-  const questions = await questionRepository.retrieveAllQuestionsFromQuiz(
+const retrieveQuizQuestions = async (
+  clientId,
+  quizId,
+  status = QuestionStatus.ACTIVE
+) => {
+  return questionRepository.retrieveQuizQuestions(
     clientId,
-    quizId
+    quizId,
+    status
   );
-
-  return questions;
 };
 
 module.exports = {
-  addQuestionToQuiz,
-  updateQuestionInQuiz,
-  removeQuestionFormQuiz,
-  removeAllQuestionsFormQuiz,
-  retrieveQuestionFromQuiz,
-  retrieveAllQuestionsFromQuiz,
+  createQuizQuestion,
+  updateQuizQuestion,
+  deleteQuizQuestion,
+  restoreQuizQuestion,
+  permanentlyDeleteQuizQuestions,
+  retrieveQuizQuestion,
+  retrieveQuizQuestions,
 };

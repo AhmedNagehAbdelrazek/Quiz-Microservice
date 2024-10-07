@@ -16,7 +16,7 @@ const authMiddleware = asyncHandler(async (req, res, next) => {
     throw new HttpError(400, "Missing token.");
   }
 
-  const client = await authService.authenticate(token);
+  const client = await authService.authenticateClientByToken(token);
 
   req.client = client;
 

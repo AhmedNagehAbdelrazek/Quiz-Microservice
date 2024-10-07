@@ -29,26 +29,26 @@ const createQuiz = async (
   return toDTO(quiz);
 };
 
-const updateQuiz = async (clientId, id, update) => {
+const updateQuiz = async (clientId, quizId, update) => {
   const { Quiz } = getModelsForClient(clientId);
 
-  const quiz = await Quiz.findByIdAndUpdate(id, update, {
+  const quiz = await Quiz.findByIdAndUpdate(quizId, update, {
     new: true,
   });
 
   return quiz ? toDTO(quiz) : null;
 };
 
-const deleteQuiz = async (clientId, id) => {
+const deleteQuiz = async (clientId, quizId) => {
   const { Quiz } = getModelsForClient(clientId);
 
-  await Quiz.findByIdAndDelete(id);
+  await Quiz.findByIdAndDelete(quizId);
 };
 
-const retrieveQuiz = async (clientId, id) => {
+const retrieveQuiz = async (clientId, quizId) => {
   const { Quiz } = getModelsForClient(clientId);
 
-  const quiz = await Quiz.findById(id);
+  const quiz = await Quiz.findById(quizId);
 
   return quiz ? toDTO(quiz) : null;
 };

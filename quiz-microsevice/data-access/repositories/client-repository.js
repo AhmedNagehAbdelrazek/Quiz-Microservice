@@ -1,55 +1,55 @@
 const Client = require("../models/client");
 
-const createClient = async (name, clientId, clientSecretHash, status) => {
+const createClient = async (name, oauthId, oauthSecretHash, status) => {
   const client = await Client.create({
     name,
-    clientId,
-    clientSecretHash,
+    oauthId,
+    oauthSecretHash,
     status,
   });
 
   return toDTO(client);
 };
 
-const updateClient = async (id, update) => {
-  const client = await Client.findByIdAndUpdate(id, update, {
+const updateClient = async (clientId, update) => {
+  const client = await Client.findByIdAndUpdate(clientId, update, {
     new: true,
   });
 
   return client ? toDTO(client) : null;
 };
 
-const retrieveClientById = async (id) => {
-  const client = await Client.findOneById(id);
+const retrieveClient = async (clientId) => {
+  const client = await Client.findById(clientId);
 
   return client ? toDTO(client) : null;
 };
 
-const retrieveClientByClientId = async (clientId) => {
-  const client = await Client.findOne({ clientId });
+const retrieveClientByOAuthId = async (oauthId) => {
+  const client = await Client.findOne({ oauthId });
 
   return client ? toDTO(client) : null;
 };
 
-const retrieveClients = async (skip, limit) => {
-  const clients = await Client.find().skip(skip).limit(limit);
+const retrieveClients = async (skip, limit, status) => {
+  const clients = await Client.find({ status }).skip(skip).limit(limit);
 
   return clients.map(toDTO);
 };
 
-const countClients = () => {
-  return Client.countDocuments();
+const countClients = (status) => {
+  return Client.countDocuments({ status });
 };
 
-const toDTO = ({ _id, name, clientId, clientSecretHash, status }) => {
-  return { id: _id.toString(), name, clientId, clientSecretHash, status };
+const toDTO = ({ _id, name, oauthId, oauthSecretHash, status }) => {
+  return { id: _id.toString(), name, oauthId, oauthSecretHash, status };
 };
 
 module.exports = {
   createClient,
   updateClient,
-  retrieveClientById,
-  retrieveClientByClientId,
+  retrieveClient,
+  retrieveClientByOAuthId,
   retrieveClients,
   countClients,
 };

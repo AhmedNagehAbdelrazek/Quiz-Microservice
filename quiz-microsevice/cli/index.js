@@ -10,11 +10,12 @@ const {
   createClient,
   renameClient,
   regenerateClientCredentials,
-  activateClient,
-  deactivateClient,
+  deleteClient,
+  restoreClient,
   retrieveClients,
 } = require("./actions");
 
+const { ClientStatus } = require("../business-logic/enums");
 const { ValidationError } = require("../business-logic/errors/common");
 
 // History file path
@@ -71,21 +72,27 @@ cli
           break;
         }
 
-        case "activate-client": {
+        case "delete-client": {
           const [id] = args;
-          await activateClient(id);
+          await deleteClient(id);
           break;
         }
 
-        case "deactivate-client": {
+        case "restore-client": {
           const [id] = args;
-          await deactivateClient(id);
+          await restoreClient(id);
           break;
         }
 
         case "retrieve-clients": {
-          const [page = 1, limit = 20] = args;
+          const [page, limit] = args;
           await retrieveClients(page, limit);
+          break;
+        }
+
+        case "retrieve-deleted-clients": {
+          const [page, limit] = args;
+          await retrieveClients(page, limit, ClientStatus.DELETED);
           break;
         }
 

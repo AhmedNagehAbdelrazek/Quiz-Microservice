@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const { ClientStatusTypes } = require("../../business-logic/enums");
+const { ClientStatus } = require("../../business-logic/enums");
 
 const ClientSchema = new mongoose.Schema(
   {
@@ -8,18 +8,18 @@ const ClientSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    clientId: {
+    oauthId: {
       type: String,
       required: true,
     },
-    clientSecretHash: {
+    oauthSecretHash: {
       type: String,
       required: true,
     },
     status: {
       type: String,
-      enum: Object.values(ClientStatusTypes),
-      default: ClientStatusTypes.ACTIVE,
+      enum: Object.values(ClientStatus),
+      default: ClientStatus.ACTIVE,
     },
   },
   {

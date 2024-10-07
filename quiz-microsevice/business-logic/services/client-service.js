@@ -2,8 +2,12 @@ const validator = require("validator");
 const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 
-const { ClientStatusTypes } = require("../enums");
-const { ValidationError, NotExistError } = require("../errors/common");
+const { ClientStatus } = require("../enums");
+const {
+  ValidationError,
+  NotExistError,
+  InvalidStatusError,
+} = require("../errors/common");
 
 const { clientRepository } = require("../../data-access/repositories");
 
@@ -41,26 +45,26 @@ const validateLimit = (limit) => {
 const createClient = async (name) => {
   await validateName(name);
 
-  const clientId = crypto.randomBytes(20).toString("hex");
-  const clientSecret = crypto.randomBytes(20).toString("hex");
+  const oauthId = crypto.randomBytes(20).toString("hex");
+  const oauthSecret = crypto.randomBytes(20).toString("hex");
 
-  const clientSecretHash = bcrypt.hashSync(clientSecret, bcrypt.genSaltSync());
+  const oauthSecretHash = bcrypt.hashSync(oauthSecret, bcrypt.genSaltSync());
 
   await clientRepository.createClient(
     name,
-    clientId,
-    clientSecretHash,
-    ClientStatusTypes.ACTIVE
+    oauthId,
+    oauthSecretHash,
+    ClientStatus.ACTIVE
   );
 
-  return { clientId, clientSecret };
+  return { oauthId, oauthSecret };
 };
 
-const renameClient = async (id, name) => {
-  await validateId(id);
+const renameClient = async (clientId, name) => {
+  await validateId(clientId);
   await validateName(name);
 
-  const client = await clientRepository.updateClient(id, { name });
+  const client = await clientRepository.updateClient(clientId, { name });
 
   if (!client) {
     throw new NotExistError("There is no client with this id.");
@@ -69,58 +73,66 @@ const renameClient = async (id, name) => {
   return client;
 };
 
-const regenerateClientCredentials = async (id) => {
-  await validateId(id);
+const regenerateClientCredentials = async (clientId) => {
+  await validateId(clientId);
 
-  const clientId = crypto.randomBytes(20).toString("hex");
-  const clientSecret = crypto.randomBytes(20).toString("hex");
+  const oauthId = crypto.randomBytes(20).toString("hex");
+  const oauthSecret = crypto.randomBytes(20).toString("hex");
 
-  const clientSecretHash = bcrypt.hashSync(clientSecret, bcrypt.genSaltSync());
+  const oauthSecretHash = bcrypt.hashSync(oauthSecret, bcrypt.genSaltSync());
 
-  const client = await clientRepository.updateClient(id, {
-    clientId,
-    clientSecretHash,
+  const client = await clientRepository.updateClient(clientId, {
+    oauthId,
+    oauthSecretHash,
   });
 
   if (!client) {
     throw new NotExistError("There is no client with this id.");
   }
 
-  return { clientId, clientSecret };
+  return { oauthId, oauthSecret };
 };
 
-const activateClient = async (id) => {
-  await validateId(id);
+const deleteClient = async (clientId) => {
+  await validateId(clientId);
 
-  const client = await clientRepository.updateClient(id, {
-    status: ClientStatusTypes.ACTIVE,
-  });
+  const client = await clientRepository.retrieveClient(clientId);
 
   if (!client) {
     throw new NotExistError("There is no client with this id.");
   }
 
-  return client;
+  if (client.status === ClientStatus.DELETED) {
+    throw new InvalidStatusError("This client already deleted.");
+  }
+
+  return clientRepository.updateClient(clientId, {
+    status: ClientStatus.DELETED,
+  });
 };
 
-const deactivateClient = async (id) => {
-  await validateId(id);
+const restoreClient = async (clientId) => {
+  await validateId(clientId);
 
-  const client = await clientRepository.updateClient(id, {
-    status: ClientStatusTypes.INACTIVE,
-  });
+  const client = await clientRepository.retrieveClient(clientId);
 
   if (!client) {
     throw new NotExistError("There is no client with this id.");
   }
 
-  return client;
+  if (client.status === ClientStatus.ACTIVE) {
+    throw new InvalidStatusError("This client already active.");
+  }
+
+  return clientRepository.updateClient(clientId, {
+    status: ClientStatus.ACTIVE,
+  });
 };
 
-const retrieveClientById = async (id) => {
-  validateId(id);
+const retrieveClient = async (clientId) => {
+  validateId(clientId);
 
-  const client = await clientRepository.retrieveClientById(id);
+  const client = await clientRepository.retrieveClient(clientId);
 
   if (!client) {
     throw new NotExistError("There is no client with this clientId.");
@@ -129,26 +141,31 @@ const retrieveClientById = async (id) => {
   return client;
 };
 
-const retrieveClientByClientId = async (clientId) => {
-  const client = await clientRepository.retrieveClientByClientId(clientId);
+const retrieveClientByOAuthId = async (oauthId) => {
+  const client = await clientRepository.retrieveClientByOAuthId(oauthId);
 
   if (!client) {
-    throw new NotExistError("There is no client with this clientId.");
+    throw new NotExistError("There is no client with this oauthId.");
   }
 
   return client;
 };
 
-const retrieveClients = async (page = 1, limit = 20) => {
+const retrieveClients = async (
+  page = 1,
+  limit = 20,
+  status = ClientStatus.ACTIVE
+) => {
   validatePage(page);
   validateLimit(limit);
 
   const clients = await clientRepository.retrieveClients(
     (page - 1) * limit,
-    limit
+    limit,
+    status
   );
 
-  const totalCount = await clientRepository.countClients();
+  const totalCount = await clientRepository.countClients(status);
   const totalPages = Math.ceil(totalCount / limit);
 
   return { clients, pagination: { page, totalPages } };
@@ -158,9 +175,9 @@ module.exports = {
   createClient,
   renameClient,
   regenerateClientCredentials,
-  activateClient,
-  deactivateClient,
-  retrieveClientById,
-  retrieveClientByClientId,
+  deleteClient,
+  restoreClient,
+  retrieveClient,
+  retrieveClientByOAuthId,
   retrieveClients,
 };

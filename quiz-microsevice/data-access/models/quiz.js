@@ -1,9 +1,6 @@
 const mongoose = require("mongoose");
 
-const {
-  DifficultyTypes,
-  QuizStatusTypes,
-} = require("../../business-logic/enums");
+const { DifficultyType, QuizStatus } = require("../../business-logic/enums");
 
 const generateQuizModelForClient = (id) => {
   const quizSchema = new mongoose.Schema(
@@ -19,8 +16,8 @@ const generateQuizModelForClient = (id) => {
       categories: [String],
       difficulty: {
         type: String,
-        enum: Object.values(DifficultyTypes),
-        default: DifficultyTypes.EASY,
+        enum: Object.values(DifficultyType),
+        default: DifficultyType.EASY,
       },
       timeLimit: {
         type: Number,
@@ -40,8 +37,8 @@ const generateQuizModelForClient = (id) => {
       },
       status: {
         type: String,
-        enum: Object.values(QuizStatusTypes),
-        default: QuizStatusTypes.DRAFTED,
+        enum: Object.values(QuizStatus),
+        default: QuizStatus.DRAFTED,
       },
     },
     { timestamps: true }

@@ -2,10 +2,10 @@ const Client = require("./client");
 const generateQuizModelForClient = require("./quiz");
 const generateQuestionModelForClient = require("./question");
 
-const map = new Map();
+const cache = new Map();
 
 const getModelsForClient = (id) => {
-  const models = map.get(id);
+  const models = cache.get(id);
 
   if (models) {
     return models;
@@ -14,7 +14,7 @@ const getModelsForClient = (id) => {
   const Quiz = generateQuizModelForClient(id);
   const Question = generateQuestionModelForClient(id);
 
-  map.set(id, { Quiz, Question });
+  cache.set(id, { Quiz, Question });
 
   return { Quiz, Question };
 };
