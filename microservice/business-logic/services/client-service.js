@@ -12,8 +12,8 @@ const {
 const { clientRepository } = require("../../data-access/repositories");
 
 const validateId = async (id) => {
-  if (!validator.isMongoId(id)) {
-    throw new ValidationError("Invalid client id, it must be a MongoId.");
+  if (!validator.isUUID(id)) {
+    throw new ValidationError("Invalid client id, it must be a UUID.");
   }
 };
 

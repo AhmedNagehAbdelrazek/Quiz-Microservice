@@ -11,8 +11,8 @@ const questionService = require("../services/question-service");
 const { quizRepository } = require("../../data-access/repositories");
 
 const validateId = (id) => {
-  if (!validator.isMongoId(id)) {
-    throw new ValidationError("Invalid client id, it must be a MongoId.");
+  if (!validator.isUUID(id)) {
+    throw new ValidationError("Invalid client id, it must be a UUID.");
   }
 };
 

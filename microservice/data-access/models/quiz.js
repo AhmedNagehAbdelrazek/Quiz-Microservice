@@ -1,10 +1,15 @@
 const mongoose = require("mongoose");
+const { v4: genUUID } = require("uuid");
 
 const { DifficultyType, QuizStatus } = require("../../business-logic/enums");
 
 const generateQuizModelForClient = (id) => {
   const quizSchema = new mongoose.Schema(
     {
+      _id: {
+        type: String,
+        default: genUUID,
+      },
       title: {
         type: String,
         required: true,

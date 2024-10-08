@@ -10,8 +10,8 @@ const {
 const { questionRepository } = require("../../data-access/repositories");
 
 const validateId = (id) => {
-  if (!validator.isMongoId(id)) {
-    throw new ValidationError("Invalid question id, it must be a MongoId.");
+  if (!validator.isUUID(id)) {
+    throw new ValidationError("Invalid question id, it must be a UUID.");
   }
 };
 
