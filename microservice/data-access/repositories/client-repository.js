@@ -1,4 +1,4 @@
-const Client = require("../models/client");
+const { Client, getModelsForClient } = require("../models");
 
 const createClient = async (name, oauthId, oauthSecretHash, status) => {
   const client = await Client.create({
@@ -17,6 +17,14 @@ const updateClient = async (clientId, update) => {
   });
 
   return client ? toDTO(client) : null;
+};
+
+const deleteClient = async (clientId) => {
+  const { Quiz, Question } = getModelsForClient(clientId);
+
+  await Quiz.collection.drop();
+  await Question.collection.drop();
+  await Client.findByIdAndDelete(clientId);
 };
 
 const retrieveClient = async (clientId) => {
@@ -48,6 +56,7 @@ const toDTO = ({ _id, name, oauthId, oauthSecretHash, status }) => {
 module.exports = {
   createClient,
   updateClient,
+  deleteClient,
   retrieveClient,
   retrieveClientByOAuthId,
   retrieveClients,

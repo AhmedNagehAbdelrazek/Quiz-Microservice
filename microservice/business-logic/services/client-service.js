@@ -2,7 +2,7 @@ const validator = require("validator");
 const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 
-const { ClientStatus } = require("../enums");
+const { ClientStatus, DeleteType } = require("../enums");
 const {
   ValidationError,
   NotExistError,
@@ -13,7 +13,7 @@ const { clientRepository } = require("../../data-access/repositories");
 
 const validateId = async (id) => {
   if (!validator.isUUID(id)) {
-    throw new ValidationError("Invalid client id, it must be a UUID.");
+    throw new ValidationError("Invalid client ID, it must be a UUID.");
   }
 };
 
@@ -23,22 +23,30 @@ const validateName = async (name) => {
     !validator.isLength(name, { min: 1, max: 50 })
   ) {
     throw new ValidationError(
-      "Invalid name, it must be a string between 1 and 50 characters."
+      "Invalid 'name', it must be a string between 1 and 50 characters."
     );
   }
 };
 
 const validatePage = (page) => {
-  if (!validator.isInt(String(page), { min: 0 })) {
-    throw new ValidationError("Invalid 'page', it must be a positive integer.");
+  if (!validator.isInt(String(page), { min: 1 })) {
+    throw new ValidationError(
+      "Invalid 'page', it must be an integer greater than one"
+    );
   }
 };
 
 const validateLimit = (limit) => {
-  if (!validator.isInt(String(limit), { min: 0 })) {
+  if (!validator.isInt(String(limit), { min: 1 })) {
     throw new ValidationError(
-      "Invalid 'limit', it must be a positive integer."
+      "Invalid 'limit', it must be an integer greater than one"
     );
+  }
+};
+
+const validateStatus = (status) => {
+  if (!Object.values(ClientStatus).includes(status)) {
+    throw new ValidationError("Invalid 'status'.");
   }
 };
 
@@ -67,7 +75,7 @@ const renameClient = async (clientId, name) => {
   const client = await clientRepository.updateClient(clientId, { name });
 
   if (!client) {
-    throw new NotExistError("There is no client with this id.");
+    throw new NotExistError("There is no client with this ID.");
   }
 
   return client;
@@ -87,28 +95,38 @@ const regenerateClientCredentials = async (clientId) => {
   });
 
   if (!client) {
-    throw new NotExistError("There is no client with this id.");
+    throw new NotExistError("There is no client with this ID.");
   }
 
   return { oauthId, oauthSecret };
 };
 
-const deleteClient = async (clientId) => {
+const deleteClient = async (clientId, type = DeleteType.SOFT) => {
   await validateId(clientId);
 
   const client = await clientRepository.retrieveClient(clientId);
 
   if (!client) {
-    throw new NotExistError("There is no client with this id.");
+    throw new NotExistError("There is no client with this ID.");
   }
 
-  if (client.status === ClientStatus.DELETED) {
-    throw new InvalidStatusError("This client already deleted.");
+  if (type === DeleteType.SOFT) {
+    if (client.status === ClientStatus.DELETED) {
+      throw new InvalidStatusError("This client has already been deleted.");
+    }
+
+    await clientRepository.updateClient(clientId, {
+      status: ClientStatus.DELETED,
+    });
+
+    return;
   }
 
-  return clientRepository.updateClient(clientId, {
-    status: ClientStatus.DELETED,
-  });
+  if (type === DeleteType.HARD) {
+    await clientRepository.deleteClient(clientId);
+
+    return;
+  }
 };
 
 const restoreClient = async (clientId) => {
@@ -117,11 +135,11 @@ const restoreClient = async (clientId) => {
   const client = await clientRepository.retrieveClient(clientId);
 
   if (!client) {
-    throw new NotExistError("There is no client with this id.");
+    throw new NotExistError("There is no client with this ID.");
   }
 
   if (client.status === ClientStatus.ACTIVE) {
-    throw new InvalidStatusError("This client already active.");
+    throw new InvalidStatusError("This client is already active.");
   }
 
   return clientRepository.updateClient(clientId, {
@@ -135,7 +153,7 @@ const retrieveClient = async (clientId) => {
   const client = await clientRepository.retrieveClient(clientId);
 
   if (!client) {
-    throw new NotExistError("There is no client with this clientId.");
+    throw new NotExistError("There is no client with this ID.");
   }
 
   return client;
@@ -158,6 +176,7 @@ const retrieveClients = async (
 ) => {
   validatePage(page);
   validateLimit(limit);
+  validateStatus(status);
 
   const clients = await clientRepository.retrieveClients(
     (page - 1) * limit,

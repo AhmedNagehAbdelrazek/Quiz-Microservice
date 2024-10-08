@@ -100,15 +100,15 @@ const validateQuestions = (questions) => {
 };
 
 const validatePage = (page) => {
-  if (!validator.isInt(String(page), { min: 0 })) {
-    throw new ValidationError("Invalid 'page', it must be a positive integer.");
+  if (!validator.isInt(String(page), { min: 1 })) {
+    throw new ValidationError("Invalid 'page', it must be an integer greater than one");
   }
 };
 
 const validateLimit = (limit) => {
-  if (!validator.isInt(String(limit), { min: 0 })) {
+  if (!validator.isInt(String(limit), { min: 1 })) {
     throw new ValidationError(
-      "Invalid 'limit', it must be a positive integer."
+      "Invalid 'limit', it must be an integer greater than one"
     );
   }
 };

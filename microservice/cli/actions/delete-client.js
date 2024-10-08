@@ -1,11 +1,7 @@
 const { clientService } = require("../../business-logic/services");
 
-const deleteClient = async (id) => {
-  const client = await clientService.deleteClient(id);
-
-  delete client.oauthSecretHash;
-
-  console.log(client);
+const deleteClient = async (id, type) => {
+  await clientService.deleteClient(id, type);
 };
 
 module.exports = deleteClient;
