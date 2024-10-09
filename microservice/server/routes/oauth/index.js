@@ -5,7 +5,7 @@ const { oauthErrorHandler } = require("../../handlers");
 
 const router = Router();
 
-router.post("/token", oauthController.generateToken);
+router.post("/token", oauthController.generateAccessToken);
 
 router.use(oauthErrorHandler);
 

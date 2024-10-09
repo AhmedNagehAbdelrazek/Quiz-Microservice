@@ -1,18 +1,13 @@
-const Client = require("../models/client");
+const { Client } = require("../models");
 
-const createClient = async (name, oauthId, oauthSecretHash, status) => {
-  const client = await Client.create({
-    name,
-    oauthId,
-    oauthSecretHash,
-    status,
-  });
+const createClient = async (data) => {
+  const client = await Client.create(data);
 
   return toDTO(client);
 };
 
-const updateClient = async (clientId, update) => {
-  const client = await Client.findByIdAndUpdate(clientId, update, {
+const updateClient = async (clientId, data) => {
+  const client = await Client.findByIdAndUpdate(clientId, data, {
     new: true,
   });
 
@@ -25,31 +20,33 @@ const retrieveClient = async (clientId) => {
   return client ? toDTO(client) : null;
 };
 
-const retrieveClientByOAuthId = async (oauthId) => {
-  const client = await Client.findOne({ oauthId });
+const retrieveClientForOAuth = async (client_id) => {
+  const client = await Client.findOne({ client_id });
 
   return client ? toDTO(client) : null;
 };
 
-const retrieveClients = async (skip, limit, status) => {
-  const clients = await Client.find({ status }).skip(skip).limit(limit);
+const retrieveClients = async (filter, pagination) => {
+  const clients = await Client.find(filter)
+    .skip(pagination.skip)
+    .limit(pagination.limit);
 
   return clients.map(toDTO);
 };
 
-const countClients = (status) => {
-  return Client.countDocuments({ status });
+const countClients = (filter) => {
+  return Client.countDocuments(filter);
 };
 
-const toDTO = ({ _id, name, oauthId, oauthSecretHash, status }) => {
-  return { id: _id.toString(), name, oauthId, oauthSecretHash, status };
+const toDTO = ({ _id, name, client_id, client_secret_hash, status }) => {
+  return { id: _id.toString(), name, client_id, client_secret_hash, status };
 };
 
 module.exports = {
   createClient,
   updateClient,
   retrieveClient,
-  retrieveClientByOAuthId,
+  retrieveClientForOAuth,
   retrieveClients,
   countClients,
 };

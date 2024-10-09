@@ -1,19 +1,16 @@
 const { clientService } = require("../../business-logic/services");
 
-const { ClientStatus } = require("../../business-logic/enums");
-
-const retrieveAllClients = async (page, limit, status) => {
+const retrieveClients = async ({ status }, { page, limit }) => {
   const { clients, pagination } = await clientService.retrieveClients(
-    page,
-    limit,
-    status
+    { status },
+    { page, limit }
   );
 
   clients.forEach((client) => {
-    delete client.oauthSecretHash;
+    delete client.client_secret_hash;
   });
 
   console.log({ clients, pagination });
 };
 
-module.exports = retrieveAllClients;
+module.exports = retrieveClients;

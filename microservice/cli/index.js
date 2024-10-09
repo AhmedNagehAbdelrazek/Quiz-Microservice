@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+
 require("dotenv").config();
 
 const mongoose = require("mongoose");
@@ -10,18 +11,15 @@ const {
   createClient,
   renameClient,
   regenerateClientCredentials,
-  deleteClient,
-  restoreClient,
+  activateClient,
+  deactivateClient,
   retrieveClients,
 } = require("./actions");
 
 const { ClientStatus } = require("../business-logic/enums");
-const { ValidationError } = require("../business-logic/errors/common");
 
-// History file path
-const historyFilePath = path.join(__dirname, ".cli-history");
+const historyFilePath = path.join(__dirname, "../.cli-history");
 
-// Load history from file
 const loadHistory = () => {
   if (fs.existsSync(historyFilePath)) {
     return fs
@@ -32,67 +30,145 @@ const loadHistory = () => {
   return [];
 };
 
-// Save history to file
 const saveHistory = (history) => {
   fs.writeFileSync(historyFilePath, history.join("\n"));
 };
 
-// Set up readline with history support
+const parseTokens = (tokens, { arguments = {}, flags = {} }) => {
+  const result = { arguments: {}, flags: {} };
+
+  const parseValue = (value, type) => {
+    switch (type) {
+      case "string": {
+        return value;
+      }
+
+      case "number": {
+        const num = Number(value);
+        if (isNaN(num)) throw new Error(`Invalid number: ${value}`);
+        return num;
+      }
+
+      case "boolean": {
+        if (value === undefined || value === "true") return true;
+        if (value === "false") return false;
+        throw new Error(`Invalid boolean value: ${value}`);
+      }
+
+      default: {
+        throw new Error(`Unknown type: ${type}`);
+      }
+    }
+  };
+
+  for (const key in arguments) {
+    const type = arguments[key];
+
+    if (tokens.length === 0 || tokens[0].startsWith("--")) {
+      throw new Error(`Missing "${key}" argument.`);
+    }
+
+    const value = tokens.shift();
+
+    result.arguments[key] = parseValue(value, type);
+  }
+
+  while (tokens.length) {
+    const token = tokens.shift();
+
+    if (!token.startsWith("--")) {
+      throw new Error(`Unexpected argument: ${token}`);
+    }
+
+    const [key, value] = token.split("=");
+
+    if (!(key in flags)) {
+      throw new Error(`Unknown flag: ${key}`);
+    }
+
+    result.flags[key] = parseValue(value, flags[key]);
+  }
+
+  return result;
+};
+
 const cli = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
-  prompt: "quiz-microservice-cli> ",
-  historySize: 100, // Limit history to the last 100 commands
+  prompt: "cli> ",
+  historySize: 100,
 });
 
-// Load history into readline
 cli.history = loadHistory();
 
 cli
   .on("line", async (input) => {
-    const [command, ...args] = input.trim().split(" ");
+    const [command, ...tokens] = input.trim().split(" ");
 
     try {
       switch (command) {
         case "create-client": {
-          const [name] = args;
-          await createClient(name);
+          const { arguments } = parseTokens(tokens, {
+            arguments: { name: "string" },
+          });
+
+          await createClient(arguments.name);
           break;
         }
 
         case "rename-client": {
-          const [id, name] = args;
-          await renameClient(id, name);
+          const { arguments } = parseTokens(tokens, {
+            arguments: { id: "string", name: "string" },
+          });
+
+          await renameClient(arguments.id, arguments.name);
           break;
         }
 
         case "regenerate-client-credentials": {
-          const [id] = args;
-          await regenerateClientCredentials(id);
+          const { arguments } = parseTokens(tokens, {
+            arguments: { id: "string" },
+          });
+
+          await regenerateClientCredentials(arguments.id);
           break;
         }
 
-        case "delete-client": {
-          const [id] = args;
-          await deleteClient(id);
+        case "activate-client": {
+          const { arguments } = parseTokens(tokens, {
+            arguments: { id: "string" },
+          });
+
+          await activateClient(arguments.id);
           break;
         }
 
-        case "restore-client": {
-          const [id] = args;
-          await restoreClient(id);
+        case "deactivate-client": {
+          const { arguments } = parseTokens(tokens, {
+            arguments: { id: "string" },
+          });
+
+          await deactivateClient(arguments.id);
           break;
         }
 
         case "retrieve-clients": {
-          const [page, limit] = args;
-          await retrieveClients(page, limit);
-          break;
-        }
+          const { flags } = parseTokens(tokens, {
+            flags: {
+              "--page": "number",
+              "--limit": "number",
+              "--inactive": "boolean",
+            },
+          });
 
-        case "retrieve-deleted-clients": {
-          const [page, limit] = args;
-          await retrieveClients(page, limit, ClientStatus.DELETED);
+          const page = flags["--page"];
+          const limit = flags["--limit"];
+
+          const status = flags["--inactive"]
+            ? ClientStatus.INACTIVE
+            : ClientStatus.ACTIVE;
+
+          await retrieveClients({ status }, { page, limit });
           break;
         }
 
@@ -106,11 +182,7 @@ cli
           console.log(`Command not found: ${command}`);
       }
     } catch (error) {
-      if (error instanceof ValidationError) {
-        console.log(error.message);
-      } else {
-        console.error(error);
-      }
+      console.log(error.message);
     }
 
     cli.prompt();

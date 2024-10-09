@@ -1,17 +1,13 @@
 const validator = require("validator");
 
-const { QuestionsType, QuestionStatus, DeleteType } = require("../enums");
-const {
-  ValidationError,
-  NotExistError,
-  InvalidStatusError,
-} = require("../errors/common");
+const { QuestionsType } = require("../enums");
+const { ValidationError, NotExistError } = require("../errors/common");
 
 const { questionRepository } = require("../../data-access/repositories");
 
 const validateId = (id) => {
-  if (!validator.isMongoId(id)) {
-    throw new ValidationError("Invalid question id, it must be a MongoId.");
+  if (!validator.isUUID(id)) {
+    throw new ValidationError("Invalid question ID, it must be a UUID.");
   }
 };
 
@@ -61,10 +57,10 @@ const validateAnswer = (type, options, answer) => {
     case QuestionsType.SHORT_ANSWER: {
       if (
         typeof answer !== "string" ||
-        !validator.isLength(answer, { min: 1, max: 250 })
+        !validator.isLength(answer, { min: 1, max: 200 })
       ) {
         throw new ValidationError(
-          "Invalid 'answer', it must be a string between 1 and 250 characters for Short-Answer questions."
+          "Invalid 'answer', it must be a string between 1 and 200 characters for Short-Answer questions."
         );
       }
 
@@ -127,50 +123,68 @@ const validatePoints = (points) => {
   }
 };
 
-const createQuizQuestion = async (
-  clientId,
-  quizId,
-  type = QuestionsType.SHORT_ANSWER,
-  text,
-  options = null,
-  answer,
-  points = 1
-) => {
+const createQuestion = async (clientId, data) => {
+  const {
+    type = QuestionsType.SHORT_ANSWER,
+    text,
+    options = null,
+    answer,
+    points = 1,
+  } = data;
+
   validateType(type);
   validateText(text);
   validateOptions(type, options);
   validateAnswer(type, options, answer);
   validatePoints(points);
 
-  const question = await questionRepository.createQuizQuestion(
-    clientId,
-    quizId,
+  const question = await questionRepository.createQuestion(clientId, {
     type,
     text,
     options,
     answer,
-    points
-  );
+    points,
+  });
 
   return question;
 };
 
-const updateQuizQuestion = async (
-  clientId,
-  quizId,
-  questionId,
-  { type, text, options, answer, points }
-) => {
+const createQuestions = async (clientId, questions) => {
+  const createdQuestions = [];
+
+  for (let i = 0; i < questions.length; i++) {
+    try {
+      const question = await createQuestion(clientId, questions[i]);
+
+      createdQuestions.push(question);
+    } catch (error) {
+      await Promise.all(
+        createdQuestions.map((question) =>
+          deleteQuestion(clientId, question.id)
+        )
+      );
+
+      throw new ValidationError(
+        `Failed to create question ${i + 1}: ${error.message}`
+      );
+    }
+  }
+
+  return createdQuestions;
+};
+
+const updateQuestion = async (clientId, questionId, data) => {
+  let { type, text, options, answer, points } = data;
+
   validateId(questionId);
 
-  const question = await questionRepository.retrieveQuizQuestion(
+  const question = await questionRepository.retrieveQuestion(
     clientId,
-    quizId,
     questionId
   );
 
   if (!question) {
-    throw new NotExistError("There is no question with this id for this quiz.");
+    throw new NotExistError("There is no question with this ID.");
   }
 
   if (type === undefined) type = question.type;
@@ -185,7 +199,7 @@ const updateQuizQuestion = async (
   validateAnswer(type, options, answer);
   validatePoints(points);
 
-  return questionRepository.updateQuizQuestion(clientId, quizId, questionId, {
+  return questionRepository.updateQuestion(clientId, questionId, {
     type,
     text,
     options,
@@ -194,99 +208,34 @@ const updateQuizQuestion = async (
   });
 };
 
-const deleteQuizQuestion = async (
-  clientId,
-  quizId,
-  questionId,
-  type = DeleteType.SOFT
-) => {
-  validateId(questionId);
+const deleteQuestion = async (clientId, questionId) => {
+  validateId(id);
 
-  const question = await questionRepository.retrieveQuizQuestion(
-    clientId,
-    quizId,
-    questionId
-  );
+  const question = await questionRepository.deleteQuestion(clientId, questionId);
 
   if (!question) {
-    throw new NotExistError("There is no question with this id.");
-  }
-
-  if (type === DeleteType.SOFT) {
-    if (question.status === QuestionStatus.DELETED) {
-      throw new InvalidStatusError("This question is already deleted.");
-    }
-
-    return questionRepository.updateQuizQuestion(clientId, quizId, questionId, {
-      status: QuestionStatus.DELETED,
-    });
-  }
-
-  if (type === DeleteType.HARD) {
-    return questionRepository.deleteQuizQuestion(clientId, quizId, questionId);
-  }
-};
-
-const restoreQuizQuestion = async (clientId, quizId, questionId) => {
-  validateId(questionId);
-
-  const question = await questionRepository.updateQuizQuestion(
-    clientId,
-    quizId,
-    questionId
-  );
-
-  if (!question) {
-    throw new NotExistError("There is no question with this id.");
-  }
-
-  if (question.status === QuestionStatus.ACTIVE) {
-    throw new InvalidStatusError("This question is already active.");
-  }
-
-  return questionRepository.updateQuizQuestion(clientId, quizId, questionId, {
-    status: QuestionStatus.ACTIVE,
-  });
-};
-
-const permanentlyDeleteQuizQuestions = async (clientId, quizId) => {
-  await questionRepository.deleteQuizQuestions(clientId, quizId);
-};
-
-const retrieveQuizQuestion = async (clientId, quizId, questionId) => {
-  validateId(questionId);
-
-  const question = await questionRepository.retrieveQuizQuestion(
-    clientId,
-    quizId,
-    questionId
-  );
-
-  if (!question) {
-    throw new NotExistError("There is no question with this id for this quiz.");
+    throw new NotExistError("There is no question with this ID.");
   }
 
   return question;
 };
 
-const retrieveQuizQuestions = async (
-  clientId,
-  quizId,
-  status = QuestionStatus.ACTIVE
-) => {
-  return questionRepository.retrieveQuizQuestions(
-    clientId,
-    quizId,
-    status
-  );
+const retrieveQuestion = async (clientId, questionId) => {
+  validateId(id);
+
+  const question = await questionRepository.retrieveQuestion(clientId, questionId);
+
+  if (!question) {
+    throw new NotExistError("There is no question with this ID.");
+  }
+
+  return question;
 };
 
 module.exports = {
-  createQuizQuestion,
-  updateQuizQuestion,
-  deleteQuizQuestion,
-  restoreQuizQuestion,
-  permanentlyDeleteQuizQuestions,
-  retrieveQuizQuestion,
-  retrieveQuizQuestions,
+  createQuestion,
+  createQuestions,
+  updateQuestion,
+  deleteQuestion,
+  retrieveQuestion,
 };
