@@ -52,7 +52,7 @@ const validateOptions = (type, options) => {
   }
 };
 
-const validateAnswer = (type, options, answer) => {
+const validateCorrectAnswer = (type, options, correctAnswer) => {
   switch (type) {
     case QuestionsType.SHORT_ANSWER: {
       if (
@@ -128,21 +128,21 @@ const createQuestion = async (clientId, data) => {
     type = QuestionsType.SHORT_ANSWER,
     text,
     options = null,
-    answer,
+    correctAnswer,
     points = 1,
   } = data;
 
   validateType(type);
   validateText(text);
   validateOptions(type, options);
-  validateAnswer(type, options, answer);
+  validateCorrectAnswer(type, options, correctAnswer);
   validatePoints(points);
 
   const question = await questionRepository.createQuestion(clientId, {
     type,
     text,
     options,
-    answer,
+    correctAnswer,
     points,
   });
 
@@ -174,7 +174,7 @@ const createQuestions = async (clientId, questions) => {
 };
 
 const updateQuestion = async (clientId, questionId, data) => {
-  let { type, text, options, answer, points } = data;
+  let { type, text, options, correctAnswer, points } = data;
 
   validateId(questionId);
 
@@ -190,20 +190,20 @@ const updateQuestion = async (clientId, questionId, data) => {
   if (type === undefined) type = question.type;
   if (text === undefined) text = question.text;
   if (options === undefined) options = question.options;
-  if (answer === undefined) answer = question.answer;
+  if (correctAnswer === undefined) correctAnswer = question.correctAnswer;
   if (points === undefined) points = question.points;
 
   validateType(type);
   validateText(text);
   validateOptions(type, options);
-  validateAnswer(type, options, answer);
+  validateCorrectAnswer(type, options, correctAnswer);
   validatePoints(points);
 
   return questionRepository.updateQuestion(clientId, questionId, {
     type,
     text,
     options,
-    answer,
+    correctAnswer,
     points,
   });
 };
@@ -211,7 +211,10 @@ const updateQuestion = async (clientId, questionId, data) => {
 const deleteQuestion = async (clientId, questionId) => {
   validateId(id);
 
-  const question = await questionRepository.deleteQuestion(clientId, questionId);
+  const question = await questionRepository.deleteQuestion(
+    clientId,
+    questionId
+  );
 
   if (!question) {
     throw new NotExistError("There is no question with this ID.");
@@ -223,7 +226,10 @@ const deleteQuestion = async (clientId, questionId) => {
 const retrieveQuestion = async (clientId, questionId) => {
   validateId(id);
 
-  const question = await questionRepository.retrieveQuestion(clientId, questionId);
+  const question = await questionRepository.retrieveQuestion(
+    clientId,
+    questionId
+  );
 
   if (!question) {
     throw new NotExistError("There is no question with this ID.");

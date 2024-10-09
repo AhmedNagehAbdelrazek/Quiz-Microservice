@@ -34,13 +34,13 @@ const retrieveQuestion = async (clientId, questionId) => {
   return question ? toDTO(question) : null;
 };
 
-const toDTO = ({ _id, type, text, options, answer, points }) => ({
-  id: _id.toString(),
-  type,
-  text,
-  options,
-  answer,
-  points,
+const toDTO = (question) => ({
+  id: question._id,
+  type: question.type,
+  text: question.text,
+  options: question.options,
+  correctAnswer: question.correctAnswer,
+  points: question.points,
 });
 
 module.exports = {

@@ -71,32 +71,25 @@ const countQuizzes = (clientId, filter) => {
   return Quiz.countDocuments(filter);
 };
 
-const toDTO = ({
-  _id,
-  title,
-  description,
-  categories,
-  difficulty,
-  timeLimit,
-  attemptLimit,
-  dueDate,
-  passingScore,
-  status,
-  questions,
-}) => {
+const toDTO = (quiz) => {
   return {
-    id: _id,
-    title,
-    description,
-    categories,
-    difficulty,
-    timeLimit,
-    attemptLimit,
-    dueDate,
-    passingScore,
-    status,
-    questions: questions.map(({ _id, type, text, options, answer, points }) => {
-      return { id: _id, type, text, options, answer, points };
+    id: quiz._id,
+    title: quiz.title,
+    description: quiz.description,
+    timeLimit: quiz.timeLimit,
+    attemptLimit: quiz.attemptLimit,
+    dueDate: quiz.dueDate,
+    passingScore: quiz.passingScore,
+    status: quiz.status,
+    questions: quiz.questions.map((q) => {
+      return {
+        id: q._id,
+        type: q.type,
+        text: q.text,
+        options: q.options,
+        correctAnswer: q.correctAnswer,
+        points: q.points,
+      };
     }),
   };
 };

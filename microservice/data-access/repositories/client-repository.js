@@ -38,8 +38,14 @@ const countClients = (filter) => {
   return Client.countDocuments(filter);
 };
 
-const toDTO = ({ _id, name, client_id, client_secret_hash, status }) => {
-  return { id: _id.toString(), name, client_id, client_secret_hash, status };
+const toDTO = (client) => {
+  return {
+    id: client._id,
+    name: client.name,
+    client_id: client.client_id,
+    client_secret_hash: client.client_secret_hash,
+    status: client.status,
+  };
 };
 
 module.exports = {

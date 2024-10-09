@@ -1,11 +1,12 @@
 const ClientStatus = require("./client-status");
 const QuizStatus = require("./quiz-status");
-const QuizDifficulty = require("./quiz-difficulty");
+const AttemptStatus = require("./attempt-status");
 const QuestionsType = require("./question-type");
 
 module.exports = {
   ClientStatus,
   QuizStatus,
   QuizDifficulty,
+  AttemptStatus,
   QuestionsType,
 };

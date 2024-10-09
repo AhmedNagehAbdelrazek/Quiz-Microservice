@@ -38,23 +38,6 @@ const validateDescription = (description) => {
   }
 };
 
-const validateCategories = (categories) => {
-  if (
-    !Array.isArray(categories) ||
-    !categories.every((category) => typeof category === "string")
-  ) {
-    throw new ValidationError(
-      "Invalid 'categories', it must be an array of strings."
-    );
-  }
-};
-
-const validateDifficulty = (difficulty) => {
-  if (!Object.values(QuizDifficulty).includes(difficulty)) {
-    throw new ValidationError("Invalid 'difficulty'.");
-  }
-};
-
 const validateTimeLimit = (timeLimit) => {
   if (timeLimit !== null && !validator.isInt(String(timeLimit), { min: 0 })) {
     throw new ValidationError(
@@ -125,8 +108,6 @@ const createQuiz = async (clientId, data) => {
   const {
     title,
     description,
-    categories = [],
-    difficulty = QuizDifficulty.EASY,
     timeLimit = null,
     attemptLimit = null,
     dueDate = null,
@@ -136,8 +117,6 @@ const createQuiz = async (clientId, data) => {
 
   validateTitle(title);
   validateDescription(description);
-  validateCategories(categories);
-  validateDifficulty(difficulty);
   validateTimeLimit(timeLimit);
   validateAttemptLimit(attemptLimit);
   validateDueDate(dueDate);
@@ -152,8 +131,6 @@ const createQuiz = async (clientId, data) => {
   const quiz = await quizRepository.createQuiz(clientId, {
     title,
     description,
-    categories,
-    difficulty,
     timeLimit,
     attemptLimit,
     dueDate,
@@ -166,16 +143,8 @@ const createQuiz = async (clientId, data) => {
 };
 
 const updateQuiz = async (clientId, quizId, data) => {
-  let {
-    title,
-    description,
-    categories,
-    difficulty,
-    timeLimit,
-    attemptLimit,
-    dueDate,
-    passingScore,
-  } = data;
+  let { title, description, timeLimit, attemptLimit, dueDate, passingScore } =
+    data;
 
   validateId(quizId);
 
@@ -193,8 +162,6 @@ const updateQuiz = async (clientId, quizId, data) => {
 
   if (title === undefined) title = quiz.title;
   if (description === undefined) description = quiz.description;
-  if (categories === undefined) categories = quiz.categories;
-  if (difficulty === undefined) difficulty = quiz.difficulty;
   if (timeLimit === undefined) timeLimit = quiz.timeLimit;
   if (attemptLimit === undefined) attemptLimit = quiz.attemptLimit;
   if (dueDate === undefined) dueDate = quiz.dueDate;
@@ -202,8 +169,6 @@ const updateQuiz = async (clientId, quizId, data) => {
 
   validateTitle(title);
   validateDescription(description);
-  validateCategories(categories);
-  validateDifficulty(difficulty);
   validateTimeLimit(timeLimit);
   validateAttemptLimit(attemptLimit);
   validateDueDate(dueDate);
@@ -212,8 +177,6 @@ const updateQuiz = async (clientId, quizId, data) => {
   return quizRepository.updateQuiz(clientId, quizId, {
     title,
     description,
-    categories,
-    difficulty,
     timeLimit,
     attemptLimit,
     dueDate,
