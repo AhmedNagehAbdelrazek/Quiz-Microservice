@@ -12,38 +12,38 @@ const { clientRepository } = require("../../data-access/repositories");
 
 const { JWT_SECRET, ACCESS_TOKEN_EXPIRY } = process.env;
 
-const generateToken = async (grantType, clientId, clientSecret) => {
-  if (typeof grantType !== "string") {
+const generateAccessToken = async (grant_type, client_id, client_secret) => {
+  if (typeof grant_type !== "string") {
     throw new InvalidRequestError("Invalid grant_type, it must be a string.");
   }
 
-  if (typeof clientId !== "string") {
+  if (typeof client_id !== "string") {
     throw new InvalidRequestError("Invalid client_id, it must be a string.");
   }
 
-  if (typeof clientSecret !== "string") {
+  if (typeof client_secret !== "string") {
     throw new InvalidRequestError(
       "Invalid client_secret, it must be a string."
     );
   }
 
-  if (grantType !== "client_credentials") {
+  if (grant_type !== "client_credentials") {
     throw new UnsupportedGrantTypeError("Unsupported 'grant_type'.");
   }
 
-  const client = await clientRepository.retrieveClientByOAuthId(clientId);
+  const client = await clientRepository.retrieveClientForOAuth(client_id);
 
   if (
     !client ||
-    client.status === ClientStatus.DELETED ||
-    !bcrypt.compareSync(clientSecret, client.oauthSecretHash)
+    client.status === ClientStatus.INACTIVE ||
+    !bcrypt.compareSync(client_secret, client.client_secret_hash)
   ) {
     throw new InvalidClientError("Incorrect 'client_id' or 'client_secret'.");
   }
 
-  return jwt.sign({ clientId }, JWT_SECRET, {
-    expiresIn: ACCESS_TOKEN_EXPIRY,
+  return jwt.sign({ client_id }, JWT_SECRET, {
+    expiresIn: "1h",
   });
 };
 
-module.exports = { generateToken };
+module.exports = { generateAccessToken };

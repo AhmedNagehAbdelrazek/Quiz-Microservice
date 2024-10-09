@@ -3,7 +3,7 @@ const { clientService } = require("../../business-logic/services");
 const renameClient = async (id, name) => {
   const client = await clientService.renameClient(id, name);
 
-  delete client.oauthSecretHash;
+  delete client.client_secret_hash;
 
   console.log(client);
 };

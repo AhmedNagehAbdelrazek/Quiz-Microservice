@@ -23,21 +23,11 @@ router.post("/:quizId/archive", quizController.archiveQuiz);
 
 router.post("/:quizId/unarchive", quizController.unarchiveQuiz);
 
-router.post("/:quizId/restore", quizController.restoreQuiz);
-
-router
-  .route("/:quizId/questions")
-  .post(quizController.createQuizQuestion)
-  .get(quizController.retrieveQuizQuestions);
+router.post("/:quizId/questions", quizController.createQuestion);
 
 router
   .route("/:quizId/questions/:questionId")
-  .patch(quizController.updateQuizQuestion)
-  .delete(quizController.deleteQuizQuestion);
-
-router.post(
-  "/:quizId/questions/:questionId/restore",
-  quizController.restoreQuizQuestion
-);
+  .patch(quizController.updateQuestion)
+  .delete(quizController.deleteQuestion);
 
 module.exports = router;

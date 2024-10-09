@@ -2,12 +2,10 @@ const asyncHandler = require("express-async-handler");
 
 const { oauthService } = require("../../business-logic/services");
 
-const ACCESS_TOKEN_EXPIRY = parseInt(process.env.ACCESS_TOKEN_EXPIRY, 10);
-
-const generateToken = asyncHandler(async (req, res) => {
+const generateAccessToken = asyncHandler(async (req, res) => {
   const { grant_type, client_id, client_secret } = req.body;
 
-  const token = await oauthService.generateToken(
+  const token = await oauthService.generateAccessToken(
     grant_type,
     client_id,
     client_secret
@@ -16,8 +14,8 @@ const generateToken = asyncHandler(async (req, res) => {
   return res.status(200).json({
     access_token: token,
     token_type: "Bearer",
-    expires_in: ACCESS_TOKEN_EXPIRY,
+    expires_in: 3600,
   });
 });
 
-module.exports = { generateToken };
+module.exports = { generateAccessToken };

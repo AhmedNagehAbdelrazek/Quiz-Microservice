@@ -7,17 +7,17 @@ const { clientRepository } = require("../../data-access/repositories");
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
-const authenticateClientByToken = async (token) => {
+const authenticateClientByAccessToken = async (token) => {
   try {
-    const { clientId } = jwt.decode(token, JWT_SECRET);
+    const { client_id } = jwt.decode(token, JWT_SECRET);
 
-    const client = await clientRepository.retrieveClientByOAuthId(clientId);
+    const client = await clientRepository.retrieveClientForOAuth(client_id);
 
-    if (!client || client.status === ClientStatus.DELETED) {
+    if (!client || client.status === ClientStatus.INACTIVE) {
       throw new Error();
     }
 
-    delete client.oauthSecretHash;
+    delete client.client_secret_hash;
 
     return client;
   } catch (error) {
@@ -25,4 +25,4 @@ const authenticateClientByToken = async (token) => {
   }
 };
 
-module.exports = { authenticateClientByToken };
+module.exports = { authenticateClientByAccessToken };

@@ -1,6 +1,6 @@
 const ClientStatus = Object.freeze({
   ACTIVE: "active",
-  DELETED: "deleted",
+  INACTIVE: "inactive",
 });
 
 module.exports = ClientStatus;

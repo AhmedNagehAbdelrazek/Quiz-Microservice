@@ -2,7 +2,7 @@ const validator = require("validator");
 const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 
-const { ClientStatus, DeleteType } = require("../enums");
+const { ClientStatus } = require("../enums");
 const {
   ValidationError,
   NotExistError,
@@ -53,19 +53,22 @@ const validateStatus = (status) => {
 const createClient = async (name) => {
   await validateName(name);
 
-  const oauthId = crypto.randomBytes(20).toString("hex");
-  const oauthSecret = crypto.randomBytes(20).toString("hex");
+  const client_id = crypto.randomBytes(20).toString("hex");
+  const client_secret = crypto.randomBytes(20).toString("hex");
 
-  const oauthSecretHash = bcrypt.hashSync(oauthSecret, bcrypt.genSaltSync());
-
-  await clientRepository.createClient(
-    name,
-    oauthId,
-    oauthSecretHash,
-    ClientStatus.ACTIVE
+  const client_secret_hash = bcrypt.hashSync(
+    client_secret,
+    bcrypt.genSaltSync()
   );
 
-  return { oauthId, oauthSecret };
+  await clientRepository.createClient({
+    name,
+    client_id,
+    client_secret_hash,
+    status: ClientStatus.ACTIVE,
+  });
+
+  return { client_id, client_secret };
 };
 
 const renameClient = async (clientId, name) => {
@@ -84,52 +87,27 @@ const renameClient = async (clientId, name) => {
 const regenerateClientCredentials = async (clientId) => {
   await validateId(clientId);
 
-  const oauthId = crypto.randomBytes(20).toString("hex");
-  const oauthSecret = crypto.randomBytes(20).toString("hex");
+  const client_id = crypto.randomBytes(20).toString("hex");
+  const client_secret = crypto.randomBytes(20).toString("hex");
 
-  const oauthSecretHash = bcrypt.hashSync(oauthSecret, bcrypt.genSaltSync());
+  const client_secret_hash = bcrypt.hashSync(
+    client_secret,
+    bcrypt.genSaltSync()
+  );
 
   const client = await clientRepository.updateClient(clientId, {
-    oauthId,
-    oauthSecretHash,
+    client_id,
+    client_secret_hash,
   });
 
   if (!client) {
     throw new NotExistError("There is no client with this ID.");
   }
 
-  return { oauthId, oauthSecret };
+  return { client_id, client_secret };
 };
 
-const deleteClient = async (clientId, type = DeleteType.SOFT) => {
-  await validateId(clientId);
-
-  const client = await clientRepository.retrieveClient(clientId);
-
-  if (!client) {
-    throw new NotExistError("There is no client with this ID.");
-  }
-
-  if (type === DeleteType.SOFT) {
-    if (client.status === ClientStatus.DELETED) {
-      throw new InvalidStatusError("This client has already been deleted.");
-    }
-
-    await clientRepository.updateClient(clientId, {
-      status: ClientStatus.DELETED,
-    });
-
-    return;
-  }
-
-  if (type === DeleteType.HARD) {
-    await clientRepository.deleteClient(clientId);
-
-    return;
-  }
-};
-
-const restoreClient = async (clientId) => {
+const activateClient = async (clientId) => {
   await validateId(clientId);
 
   const client = await clientRepository.retrieveClient(clientId);
@@ -147,6 +125,24 @@ const restoreClient = async (clientId) => {
   });
 };
 
+const deactivateClient = async (clientId) => {
+  await validateId(clientId);
+
+  const client = await clientRepository.retrieveClient(clientId);
+
+  if (!client) {
+    throw new NotExistError("There is no client with this ID.");
+  }
+
+  if (client.status === ClientStatus.INACTIVE) {
+    throw new InvalidStatusError("This client is already inactive.");
+  }
+
+  return clientRepository.updateClient(clientId, {
+    status: ClientStatus.INACTIVE,
+  });
+};
+
 const retrieveClient = async (clientId) => {
   validateId(clientId);
 
@@ -159,32 +155,36 @@ const retrieveClient = async (clientId) => {
   return client;
 };
 
-const retrieveClientByOAuthId = async (oauthId) => {
-  const client = await clientRepository.retrieveClientByOAuthId(oauthId);
+const retrieveClientForOAuth = async (client_id) => {
+  const client = await clientRepository.retrieveClientForOAuth(client_id);
 
   if (!client) {
-    throw new NotExistError("There is no client with this oauthId.");
+    throw new NotExistError("There is no client with this client_id.");
   }
 
   return client;
 };
 
-const retrieveClients = async (
-  page = 1,
-  limit = 20,
-  status = ClientStatus.ACTIVE
-) => {
+const retrieveClients = async (filter, pagination) => {
+  const { status = ClientStatus.ACTIVE } = filter;
+  let { page = 1, limit = 20 } = pagination;
+
   validatePage(page);
   validateLimit(limit);
   validateStatus(status);
 
+  page = Number(page);
+  limit = Number(limit);
+
   const clients = await clientRepository.retrieveClients(
-    (page - 1) * limit,
-    limit,
-    status
+    { status },
+    {
+      skip: (page - 1) * limit,
+      limit,
+    }
   );
 
-  const totalCount = await clientRepository.countClients(status);
+  const totalCount = await clientRepository.countClients({ status });
   const totalPages = Math.ceil(totalCount / limit);
 
   return { clients, pagination: { page, totalPages } };
@@ -194,9 +194,9 @@ module.exports = {
   createClient,
   renameClient,
   regenerateClientCredentials,
-  deleteClient,
-  restoreClient,
+  activateClient,
+  deactivateClient,
   retrieveClient,
-  retrieveClientByOAuthId,
+  retrieveClientForOAuth,
   retrieveClients,
 };

@@ -1,87 +1,51 @@
 const { getModelsForClient } = require("../models");
 
-const createQuizQuestion = async (
-  clientId,
-  quizId,
-  type,
-  text,
-  options,
-  answer,
-  points
-) => {
+const createQuestion = async (clientId, data) => {
   const { Question } = getModelsForClient(clientId);
 
-  const question = await Question.create({
-    quizId,
-    type,
-    text,
-    options,
-    answer,
-    points,
-  });
+  const question = await Question.create(data);
 
   return toDTO(question);
 };
 
-const updateQuizQuestion = async (clientId, quizId, questionId, update) => {
+const updateQuestion = async (clientId, questionId, data) => {
   const { Question } = getModelsForClient(clientId);
 
-  const question = await Question.findOneAndUpdate(
-    { quizId, _id: questionId },
-    update,
-    {
-      new: true,
-    }
-  );
+  const question = await Question.findByIdAndUpdate(questionId, data, {
+    new: true,
+  });
 
   return question ? toDTO(question) : null;
 };
 
-const deleteQuizQuestion = async (clientId, quizId, questionId) => {
+const deleteQuestion = async (clientId, questionId) => {
   const { Question } = getModelsForClient(clientId);
 
-  const question = await Question.findOneAndDelete({ quizId, _id: questionId });
+  const question = await Question.findByIdAndDelete(questionId);
 
   return question ? toDTO(question) : null;
 };
 
-const deleteQuizQuestions = async (clientId, quizId) => {
+const retrieveQuestion = async (clientId, questionId) => {
   const { Question } = getModelsForClient(clientId);
 
-  await Question.deleteMany({ quizId });
-};
-
-const retrieveQuizQuestion = async (clientId, quizId, questionId) => {
-  const { Question } = getModelsForClient(clientId);
-
-  const question = await Question.findOne({ quizId, _id: questionId });
+  const question = await Question.findById(questionId);
 
   return question ? toDTO(question) : null;
 };
 
-const retrieveQuizQuestions = async (clientId, quizId, status) => {
-  const { Question } = getModelsForClient(clientId);
-
-  const questions = await Question.find({ quizId, status });
-
-  return questions.map(toDTO);
-};
-
-const toDTO = ({ _id, type, text, options, answer, points, status }) => ({
+const toDTO = ({ _id, type, text, options, answer, points }) => ({
   id: _id.toString(),
   type,
   text,
   options,
   answer,
   points,
-  status,
 });
 
 module.exports = {
-  createQuizQuestion,
-  updateQuizQuestion,
-  deleteQuizQuestion,
-  deleteQuizQuestions,
-  retrieveQuizQuestion,
-  retrieveQuizQuestions,
+  createQuestion,
+  updateQuestion,
+  deleteQuestion,
+  retrieveQuestion,
 };

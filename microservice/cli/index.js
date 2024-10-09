@@ -11,16 +11,12 @@ const {
   createClient,
   renameClient,
   regenerateClientCredentials,
-  deleteClient,
-  restoreClient,
+  activateClient,
+  deactivateClient,
   retrieveClients,
 } = require("./actions");
 
-const { DeleteType, ClientStatus } = require("../business-logic/enums");
-const {
-  ValidationError,
-  NotExistError,
-} = require("../business-logic/errors/common");
+const { ClientStatus } = require("../business-logic/enums");
 
 const historyFilePath = path.join(__dirname, "../.cli-history");
 
@@ -138,24 +134,21 @@ cli
           break;
         }
 
-        case "delete-client": {
-          const { arguments, flags } = parseTokens(tokens, {
-            arguments: { id: "string" },
-            flags: { "--hard": "boolean" },
-          });
-
-          const type = flags["--hard"] ? DeleteType.HARD : DeleteType.SOFT;
-
-          await deleteClient(arguments.id, type);
-          break;
-        }
-
-        case "restore-client": {
+        case "activate-client": {
           const { arguments } = parseTokens(tokens, {
             arguments: { id: "string" },
           });
 
-          await restoreClient(arguments.id);
+          await activateClient(arguments.id);
+          break;
+        }
+
+        case "deactivate-client": {
+          const { arguments } = parseTokens(tokens, {
+            arguments: { id: "string" },
+          });
+
+          await deactivateClient(arguments.id);
           break;
         }
 
@@ -164,15 +157,18 @@ cli
             flags: {
               "--page": "number",
               "--limit": "number",
-              "--deleted": "boolean",
+              "--inactive": "boolean",
             },
           });
 
-          const status = flags["--deleted"]
-            ? ClientStatus.DELETED
+          const page = flags["--page"];
+          const limit = flags["--limit"];
+
+          const status = flags["--inactive"]
+            ? ClientStatus.INACTIVE
             : ClientStatus.ACTIVE;
 
-          await retrieveClients(flags["--page"], flags["--limit"], status);
+          await retrieveClients({ status }, { page, limit });
           break;
         }
 
@@ -186,11 +182,7 @@ cli
           console.log(`Command not found: ${command}`);
       }
     } catch (error) {
-      if (error instanceof ValidationError || error instanceof NotExistError) {
-        console.log(error.message);
-      } else {
-        console.error(error);
-      }
+      console.log(error.message);
     }
 
     cli.prompt();
