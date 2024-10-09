@@ -11,7 +11,7 @@ const { questionRepository } = require("../../data-access/repositories");
 
 const validateId = (id) => {
   if (!validator.isUUID(id)) {
-    throw new ValidationError("Invalid question id, it must be a UUID.");
+    throw new ValidationError("Invalid question ID, it must be a UUID.");
   }
 };
 
@@ -61,10 +61,10 @@ const validateAnswer = (type, options, answer) => {
     case QuestionsType.SHORT_ANSWER: {
       if (
         typeof answer !== "string" ||
-        !validator.isLength(answer, { min: 1, max: 250 })
+        !validator.isLength(answer, { min: 1, max: 200 })
       ) {
         throw new ValidationError(
-          "Invalid 'answer', it must be a string between 1 and 250 characters for Short-Answer questions."
+          "Invalid 'answer', it must be a string between 1 and 200 characters for Short-Answer questions."
         );
       }
 
@@ -170,7 +170,7 @@ const updateQuizQuestion = async (
   );
 
   if (!question) {
-    throw new NotExistError("There is no question with this id for this quiz.");
+    throw new NotExistError("There is no question with this ID for this quiz.");
   }
 
   if (type === undefined) type = question.type;
@@ -209,12 +209,12 @@ const deleteQuizQuestion = async (
   );
 
   if (!question) {
-    throw new NotExistError("There is no question with this id.");
+    throw new NotExistError("There is no question with this ID for this quiz.");
   }
 
   if (type === DeleteType.SOFT) {
     if (question.status === QuestionStatus.DELETED) {
-      throw new InvalidStatusError("This question is already deleted.");
+      throw new InvalidStatusError("This question has already been deleted.");
     }
 
     return questionRepository.updateQuizQuestion(clientId, quizId, questionId, {
@@ -237,7 +237,7 @@ const restoreQuizQuestion = async (clientId, quizId, questionId) => {
   );
 
   if (!question) {
-    throw new NotExistError("There is no question with this id.");
+    throw new NotExistError("There is no question with this ID for this quiz.");
   }
 
   if (question.status === QuestionStatus.ACTIVE) {
@@ -263,7 +263,7 @@ const retrieveQuizQuestion = async (clientId, quizId, questionId) => {
   );
 
   if (!question) {
-    throw new NotExistError("There is no question with this id for this quiz.");
+    throw new NotExistError("There is no question with this ID for this quiz.");
   }
 
   return question;

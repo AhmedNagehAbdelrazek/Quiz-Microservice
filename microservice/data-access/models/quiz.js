@@ -38,7 +38,7 @@ const generateQuizModelForClient = (id) => {
       },
       passingScore: {
         type: Number,
-        default: 50,
+        default: 0,
       },
       status: {
         type: String,
