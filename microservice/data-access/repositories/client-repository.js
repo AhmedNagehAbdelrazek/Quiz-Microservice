@@ -1,29 +1,33 @@
 const { Client } = require("../models");
+const { ClientEntity } = require("../../business-logic/entities");
 
-const createClient = async (data) => {
-  const client = await Client.create(data);
+const createClient = async (client) => {
+  const { id, name, client_id, client_secret, status } = client.toObject();
 
-  return toDTO(client);
+  await Client.create({ _id: id, name, client_id, client_secret, status });
 };
 
-const updateClient = async (clientId, data) => {
-  const client = await Client.findByIdAndUpdate(clientId, data, {
-    new: true,
+const updateClient = async (client) => {
+  const { id, name, client_id, client_secret, status } = client.toObject();
+
+  await Client.findByIdAndUpdate(id, {
+    name,
+    client_id,
+    client_secret,
+    status,
   });
-
-  return client ? toDTO(client) : null;
 };
 
-const retrieveClient = async (clientId) => {
-  const client = await Client.findById(clientId);
+const retrieveClient = async (id) => {
+  const client = await Client.findById(id);
 
-  return client ? toDTO(client) : null;
+  return client ? toEntity(client) : null;
 };
 
-const retrieveClientForOAuth = async (client_id) => {
+const retrieveClientForAuth = async (client_id) => {
   const client = await Client.findOne({ client_id });
 
-  return client ? toDTO(client) : null;
+  return client ? toEntity(client) : null;
 };
 
 const retrieveClients = async (filter, pagination) => {
@@ -31,28 +35,28 @@ const retrieveClients = async (filter, pagination) => {
     .skip(pagination.skip)
     .limit(pagination.limit);
 
-  return clients.map(toDTO);
+  return clients.map(toEntity);
 };
 
 const countClients = (filter) => {
   return Client.countDocuments(filter);
 };
 
-const toDTO = (client) => {
-  return {
+const toEntity = (client) => {
+  return new ClientEntity({
     id: client._id,
     name: client.name,
     client_id: client.client_id,
-    client_secret_hash: client.client_secret_hash,
+    client_secret: client.client_secret,
     status: client.status,
-  };
+  });
 };
 
 module.exports = {
   createClient,
   updateClient,
   retrieveClient,
-  retrieveClientForOAuth,
+  retrieveClientForAuth,
   retrieveClients,
   countClients,
 };

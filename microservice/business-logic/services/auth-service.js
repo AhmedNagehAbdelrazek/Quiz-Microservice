@@ -11,13 +11,11 @@ const authenticateClientByAccessToken = async (token) => {
   try {
     const { client_id } = jwt.decode(token, JWT_SECRET);
 
-    const client = await clientRepository.retrieveClientForOAuth(client_id);
+    const client = await clientRepository.retrieveClientForAuth(client_id);
 
     if (!client || client.status === ClientStatus.INACTIVE) {
       throw new Error();
     }
-
-    delete client.client_secret_hash;
 
     return client;
   } catch (error) {

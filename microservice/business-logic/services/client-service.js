@@ -1,46 +1,20 @@
 const validator = require("validator");
-const crypto = require("crypto");
-const bcrypt = require("bcryptjs");
 
 const { ClientStatus } = require("../enums");
-const {
-  ValidationError,
-  NotExistError,
-  InvalidStatusError,
-} = require("../errors/common");
+const { ClientEntity } = require("../entities");
+const { NotExistError, ValidationError } = require("../errors/common");
 
 const { clientRepository } = require("../../data-access/repositories");
 
-const validateId = async (id) => {
-  if (!validator.isUUID(id)) {
-    throw new ValidationError("Invalid client ID, it must be a UUID.");
-  }
-};
-
-const validateName = async (name) => {
-  if (
-    typeof name !== "string" ||
-    !validator.isLength(name, { min: 1, max: 50 })
-  ) {
-    throw new ValidationError(
-      "Invalid 'name', it must be a string between 1 and 50 characters."
-    );
-  }
-};
-
 const validatePage = (page) => {
   if (!validator.isInt(String(page), { min: 1 })) {
-    throw new ValidationError(
-      "Invalid 'page', it must be an integer greater than one"
-    );
+    throw new ValidationError("Invalid 'page', it must be an integer >= 1");
   }
 };
 
 const validateLimit = (limit) => {
   if (!validator.isInt(String(limit), { min: 1 })) {
-    throw new ValidationError(
-      "Invalid 'limit', it must be an integer greater than one"
-    );
+    throw new ValidationError("Invalid 'limit', it must be an integer >= 1");
   }
 };
 
@@ -51,108 +25,77 @@ const validateStatus = (status) => {
 };
 
 const createClient = async (name) => {
-  await validateName(name);
+  const client = new ClientEntity({ name });
 
-  const client_id = crypto.randomBytes(20).toString("hex");
-  const client_secret = crypto.randomBytes(20).toString("hex");
+  await clientRepository.createClient(client);
 
-  const client_secret_hash = bcrypt.hashSync(
-    client_secret,
-    bcrypt.genSaltSync()
-  );
-
-  await clientRepository.createClient({
-    name,
-    client_id,
-    client_secret_hash,
-    status: ClientStatus.ACTIVE,
-  });
-
-  return { client_id, client_secret };
+  return client.toObject();
 };
 
-const renameClient = async (clientId, name) => {
-  await validateId(clientId);
-  await validateName(name);
-
-  const client = await clientRepository.updateClient(clientId, { name });
+const renameClient = async (id, name) => {
+  const client = await clientRepository.retrieveClient(id);
 
   if (!client) {
     throw new NotExistError("There is no client with this ID.");
   }
 
-  return client;
+  client.name = name;
+
+  await clientRepository.updateClient(client);
+
+  return client.toObject();
 };
 
-const regenerateClientCredentials = async (clientId) => {
-  await validateId(clientId);
-
-  const client_id = crypto.randomBytes(20).toString("hex");
-  const client_secret = crypto.randomBytes(20).toString("hex");
-
-  const client_secret_hash = bcrypt.hashSync(
-    client_secret,
-    bcrypt.genSaltSync()
-  );
-
-  const client = await clientRepository.updateClient(clientId, {
-    client_id,
-    client_secret_hash,
-  });
+const regenerateClientCredentials = async (id) => {
+  const client = await clientRepository.retrieveClient(id);
 
   if (!client) {
     throw new NotExistError("There is no client with this ID.");
   }
 
-  return { client_id, client_secret };
+  client.regenerateCredentials();
+
+  await clientRepository.updateClient(client);
+
+  return client.toObject();
 };
 
-const activateClient = async (clientId) => {
-  await validateId(clientId);
-
-  const client = await clientRepository.retrieveClient(clientId);
+const activateClient = async (id) => {
+  const client = await clientRepository.retrieveClient(id);
 
   if (!client) {
     throw new NotExistError("There is no client with this ID.");
   }
 
-  if (client.status === ClientStatus.ACTIVE) {
-    throw new InvalidStatusError("This client is already active.");
-  }
+  client.activateClient();
 
-  return clientRepository.updateClient(clientId, {
-    status: ClientStatus.ACTIVE,
-  });
+  await clientRepository.updateClient(client);
+
+  return client.toObject();
 };
 
-const deactivateClient = async (clientId) => {
-  await validateId(clientId);
-
-  const client = await clientRepository.retrieveClient(clientId);
+const deactivateClient = async (id) => {
+  const client = await clientRepository.retrieveClient(id);
 
   if (!client) {
     throw new NotExistError("There is no client with this ID.");
   }
 
-  if (client.status === ClientStatus.INACTIVE) {
-    throw new InvalidStatusError("This client is already inactive.");
-  }
+  client.deactivateClient();
 
-  return clientRepository.updateClient(clientId, {
-    status: ClientStatus.INACTIVE,
-  });
+  await clientRepository.updateClient(client);
+
+  return client.toObject();
 };
 
-const retrieveClient = async (clientId) => {
-  validateId(clientId);
-
-  const client = await clientRepository.retrieveClient(clientId);
+const retrieveClient = async (id) => {
+  const client = await clientRepository.retrieveClient(id);
 
   if (!client) {
     throw new NotExistError("There is no client with this ID.");
   }
 
-  return client;
+  return client.toObject();
 };
 
 const retrieveClientForOAuth = async (client_id) => {
@@ -162,7 +105,7 @@ const retrieveClientForOAuth = async (client_id) => {
     throw new NotExistError("There is no client with this client_id.");
   }
 
-  return client;
+  return client.toObject();
 };
 
 const retrieveClients = async (filter, pagination) => {
@@ -187,7 +130,10 @@ const retrieveClients = async (filter, pagination) => {
   const totalCount = await clientRepository.countClients({ status });
   const totalPages = Math.ceil(totalCount / limit);
 
-  return { clients, pagination: { page, totalPages } };
+  return {
+    clients: clients.map((client) => client.toObject()),
+    pagination: { page, totalPages },
+  };
 };
 
 module.exports = {

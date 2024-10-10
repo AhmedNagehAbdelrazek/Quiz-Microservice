@@ -182,7 +182,7 @@ cli
           console.log(`Command not found: ${command}`);
       }
     } catch (error) {
-      console.log(error.message);
+      console.error(error);
     }
 
     cli.prompt();

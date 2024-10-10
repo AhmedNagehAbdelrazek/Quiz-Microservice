@@ -6,7 +6,6 @@ const QuestionsType = require("./question-type");
 module.exports = {
   ClientStatus,
   QuizStatus,
-  QuizDifficulty,
   AttemptStatus,
   QuestionsType,
 };

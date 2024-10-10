@@ -1,5 +1,4 @@
 const jwt = require("jsonwebtoken");
-const bcrypt = require("bcryptjs");
 
 const { ClientStatus } = require("../enums");
 const {
@@ -10,7 +9,7 @@ const {
 
 const { clientRepository } = require("../../data-access/repositories");
 
-const { JWT_SECRET, ACCESS_TOKEN_EXPIRY } = process.env;
+const { JWT_SECRET } = process.env;
 
 const generateAccessToken = async (grant_type, client_id, client_secret) => {
   if (typeof grant_type !== "string") {
@@ -31,12 +30,12 @@ const generateAccessToken = async (grant_type, client_id, client_secret) => {
     throw new UnsupportedGrantTypeError("Unsupported 'grant_type'.");
   }
 
-  const client = await clientRepository.retrieveClientForOAuth(client_id);
+  const client = await clientRepository.retrieveClientForAuth(client_id);
 
   if (
     !client ||
     client.status === ClientStatus.INACTIVE ||
-    !bcrypt.compareSync(client_secret, client.client_secret_hash)
+    client_secret !== client.client_secret
   ) {
     throw new InvalidClientError("Incorrect 'client_id' or 'client_secret'.");
   }
