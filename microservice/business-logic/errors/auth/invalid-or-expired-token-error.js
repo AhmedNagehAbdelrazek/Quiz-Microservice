@@ -1,7 +1,3 @@
-class InvalidOrExpiredTokenError extends Error {
-  constructor(message = "Invalid or expired token.") {
-    super(message);
-  }
-}
+class InvalidOrExpiredTokenError extends Error {}
 
 module.exports = InvalidOrExpiredTokenError;

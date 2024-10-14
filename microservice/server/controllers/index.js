@@ -1,4 +1,4 @@
-const oauthController = require("./oauth-controller");
+const authController = require("./auth-controller");
 const quizController = require("./quiz-controller");
 
-module.exports = { oauthController, quizController };
+module.exports = { authController, quizController };

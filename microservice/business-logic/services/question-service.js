@@ -5,6 +5,13 @@ const { ValidationError, NotExistError } = require("../errors/common");
 
 const { questionRepository } = require("../../data-access/repositories");
 
+// Constants
+
+const TEXT_LENGTH = { min: 1, max: 500 };
+const POINTS_RANGE = { min: 0, max: 10 };
+
+// Validations
+
 const validateId = (id) => {
   if (!validator.isUUID(id)) {
     throw new ValidationError("Invalid question ID, it must be a UUID.");
@@ -18,12 +25,9 @@ const validateType = (type) => {
 };
 
 const validateText = (text) => {
-  if (
-    typeof text !== "string" ||
-    !validator.isLength(text, { min: 1, max: 500 })
-  ) {
+  if (typeof text !== "string" || !validator.isLength(text, TEXT_LENGTH)) {
     throw new ValidationError(
-      "Invalid 'text', it must be a string between 1 and 500 characters."
+      `Invalid 'text', it must be a string between ${TEXT_LENGTH.min} and ${TEXT_LENGTH.max} characters.`
     );
   }
 };
@@ -42,6 +46,7 @@ const validateOptions = (type, options) => {
 
       break;
     }
+
     default: {
       if (options !== null) {
         throw new ValidationError(
@@ -54,33 +59,7 @@ const validateOptions = (type, options) => {
 
 const validateAnswer = (type, options, answer) => {
   switch (type) {
-    case QuestionsType.SHORT_ANSWER: {
-      if (
-        typeof answer !== "string" ||
-        !validator.isLength(answer, { min: 1, max: 200 })
-      ) {
-        throw new ValidationError(
-          "Invalid 'answer', it must be a string between 1 and 200 characters for Short-Answer questions."
-        );
-      }
-
-      break;
-    }
-
-    case QuestionsType.LONG_ANSWER: {
-      if (
-        typeof answer !== "string" ||
-        !validator.isLength(answer, { min: 1, max: 500 })
-      ) {
-        throw new ValidationError(
-          "Invalid 'answer', it must be a string between 1 and 500 characters for Long-Answer questions."
-        );
-      }
-
-      break;
-    }
-
-    case QuestionsType.MILTIPLE_CHOICE: {
+    case QuestionsType.MILTIPLE_CHOICE:
       if (!options.includes(answer)) {
         throw new ValidationError(
           "Invalid 'answer', it must be one of the provided options for Multiple-Choice questions."
@@ -88,9 +67,8 @@ const validateAnswer = (type, options, answer) => {
       }
 
       break;
-    }
 
-    case QuestionsType.TRUE_FALSE: {
+    case QuestionsType.TRUE_FALSE:
       if (typeof answer !== "boolean") {
         throw new ValidationError(
           "Invalid 'answer', it must be a boolean for True/False questions."
@@ -98,40 +76,32 @@ const validateAnswer = (type, options, answer) => {
       }
 
       break;
-    }
 
-    case QuestionsType.FILL_IN_THE_BLANK: {
-      if (
-        !Array.isArray(answer) ||
-        !answer.every((a) => typeof a === "string")
-      ) {
+    case QuestionsType.FILL_IN_THE_BLANK:
+      if (typeof answer !== "string") {
         throw new ValidationError(
-          "Invalid 'answer', it must be an array of strings for Fill-In-The-Blank questions."
+          "Invalid 'answer', it must be a string Fill-In-The-Blank questions."
         );
       }
 
       break;
-    }
   }
 };
 
 const validatePoints = (points) => {
-  if (!validator.isInt(String(points), { min: 0, max: 100 })) {
+  if (!validator.isInt(String(points), POINTS_RANGE)) {
     throw new ValidationError(
-      "Invalid 'points', it must be a number between 0 and 100."
+      `Invalid 'points', it must be a number between ${POINTS_RANGE.min} and ${POINTS_RANGE.max}.`
     );
   }
 };
 
-const createQuestion = async (clientId, data) => {
-  const {
-    type = QuestionsType.SHORT_ANSWER,
-    text,
-    options = null,
-    answer,
-    points = 1,
-  } = data;
+// Use Cases
 
+const createQuestion = async (
+  clientId,
+  { type, text, options, answer, points } = {}
+) => {
   validateType(type);
   validateText(text);
   validateOptions(type, options);
@@ -149,33 +119,11 @@ const createQuestion = async (clientId, data) => {
   return question;
 };
 
-const createQuestions = async (clientId, questions) => {
-  const createdQuestions = [];
-
-  for (let i = 0; i < questions.length; i++) {
-    try {
-      const question = await createQuestion(clientId, questions[i]);
-
-      createdQuestions.push(question);
-    } catch (error) {
-      await Promise.all(
-        createdQuestions.map((question) =>
-          deleteQuestion(clientId, question.id)
-        )
-      );
-
-      throw new ValidationError(
-        `Failed to create question ${i + 1}: ${error.message}`
-      );
-    }
-  }
-
-  return createdQuestions;
-};
-
-const updateQuestion = async (clientId, questionId, data) => {
-  let { type, text, options, answer, points } = data;
-
+const updateQuestion = async (
+  clientId,
+  questionId,
+  { type, text, options, answer, points } = {}
+) => {
   validateId(questionId);
 
   const question = await questionRepository.retrieveQuestion(
@@ -209,21 +157,12 @@ const updateQuestion = async (clientId, questionId, data) => {
 };
 
 const deleteQuestion = async (clientId, questionId) => {
-  validateId(id);
+  validateId(questionId);
 
-  const question = await questionRepository.deleteQuestion(clientId, questionId);
-
-  if (!question) {
-    throw new NotExistError("There is no question with this ID.");
-  }
-
-  return question;
-};
-
-const retrieveQuestion = async (clientId, questionId) => {
-  validateId(id);
-
-  const question = await questionRepository.retrieveQuestion(clientId, questionId);
+  const question = await questionRepository.deleteQuestion(
+    clientId,
+    questionId
+  );
 
   if (!question) {
     throw new NotExistError("There is no question with this ID.");
@@ -234,8 +173,6 @@ const retrieveQuestion = async (clientId, questionId) => {
 
 module.exports = {
   createQuestion,
-  createQuestions,
   updateQuestion,
   deleteQuestion,
-  retrieveQuestion,
 };

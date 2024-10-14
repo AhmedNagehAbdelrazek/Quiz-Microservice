@@ -1,11 +1,11 @@
 const asyncHandler = require("express-async-handler");
 
-const { oauthService } = require("../../business-logic/services");
+const { authService } = require("../../business-logic/services");
 
 const generateAccessToken = asyncHandler(async (req, res) => {
   const { grant_type, client_id, client_secret } = req.body;
 
-  const token = await oauthService.generateAccessToken(
+  const token = await authService.generateAccessToken(
     grant_type,
     client_id,
     client_secret

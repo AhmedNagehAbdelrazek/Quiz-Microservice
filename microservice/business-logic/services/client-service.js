@@ -3,6 +3,7 @@ const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 
 const { ClientStatus } = require("../enums");
+
 const {
   ValidationError,
   NotExistError,
@@ -11,6 +12,12 @@ const {
 
 const { clientRepository } = require("../../data-access/repositories");
 
+// Constants
+
+const NAME_LENGTH = { min: 1, max: 50 };
+
+// Validations
+
 const validateId = async (id) => {
   if (!validator.isUUID(id)) {
     throw new ValidationError("Invalid client ID, it must be a UUID.");
@@ -18,12 +25,9 @@ const validateId = async (id) => {
 };
 
 const validateName = async (name) => {
-  if (
-    typeof name !== "string" ||
-    !validator.isLength(name, { min: 1, max: 50 })
-  ) {
+  if (typeof name !== "string" || !validator.isLength(name, NAME_LENGTH)) {
     throw new ValidationError(
-      "Invalid 'name', it must be a string between 1 and 50 characters."
+      `Invalid 'name', it must be a string between ${NAME_LENGTH.min} and ${NAME_LENGTH.max} characters.`
     );
   }
 };
@@ -31,7 +35,7 @@ const validateName = async (name) => {
 const validatePage = (page) => {
   if (!validator.isInt(String(page), { min: 1 })) {
     throw new ValidationError(
-      "Invalid 'page', it must be an integer greater than one"
+      "Invalid 'page', it must be an integer greater than 1"
     );
   }
 };
@@ -39,7 +43,7 @@ const validatePage = (page) => {
 const validateLimit = (limit) => {
   if (!validator.isInt(String(limit), { min: 1 })) {
     throw new ValidationError(
-      "Invalid 'limit', it must be an integer greater than one"
+      "Invalid 'limit', it must be an integer greater than 1"
     );
   }
 };
@@ -155,8 +159,8 @@ const retrieveClient = async (clientId) => {
   return client;
 };
 
-const retrieveClientForOAuth = async (client_id) => {
-  const client = await clientRepository.retrieveClientForOAuth(client_id);
+const retrieveClientForAuth = async (client_id) => {
+  const client = await clientRepository.retrieveClientForAuth(client_id);
 
   if (!client) {
     throw new NotExistError("There is no client with this client_id.");
@@ -197,6 +201,6 @@ module.exports = {
   activateClient,
   deactivateClient,
   retrieveClient,
-  retrieveClientForOAuth,
+  retrieveClientForAuth,
   retrieveClients,
 };

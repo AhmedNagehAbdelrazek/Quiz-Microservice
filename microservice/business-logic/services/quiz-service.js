@@ -1,14 +1,23 @@
 const validator = require("validator");
 
-const { QuizStatus, QuizDifficulty } = require("../enums");
+const { QuizStatus } = require("../enums");
+
 const {
   ValidationError,
   NotExistError,
   InvalidStatusError,
 } = require("../errors/common");
+
 const questionService = require("../services/question-service");
 
 const { quizRepository } = require("../../data-access/repositories");
+
+// Constants
+
+const TITLE_LENGTH = { min: 1, max: 200 };
+const DESCRIPTION_LENGTH = { min: 1, max: 500 };
+
+// Validations
 
 const validateId = (id) => {
   if (!validator.isUUID(id)) {
@@ -17,12 +26,9 @@ const validateId = (id) => {
 };
 
 const validateTitle = (title) => {
-  if (
-    typeof title !== "string" ||
-    !validator.isLength(title, { min: 1, max: 200 })
-  ) {
+  if (typeof title !== "string" || !validator.isLength(title, TITLE_LENGTH)) {
     throw new ValidationError(
-      "Invalid 'title', it must be a string between 1 and 200 characters."
+      `Invalid 'title', it must be a string between ${TITLE_LENGTH.min} and ${TITLE_LENGTH.max} characters.`
     );
   }
 };
@@ -30,35 +36,18 @@ const validateTitle = (title) => {
 const validateDescription = (description) => {
   if (
     typeof description !== "string" ||
-    !validator.isLength(description, { min: 1, max: 500 })
+    !validator.isLength(description, DESCRIPTION_LENGTH)
   ) {
     throw new ValidationError(
-      "Invalid 'description', it must be a string between 1 and 500 characters."
+      `Invalid 'description', it must be a string between ${DESCRIPTION_LENGTH.min} and ${DESCRIPTION_LENGTH.max} characters.`
     );
-  }
-};
-
-const validateCategories = (categories) => {
-  if (
-    !Array.isArray(categories) ||
-    !categories.every((category) => typeof category === "string")
-  ) {
-    throw new ValidationError(
-      "Invalid 'categories', it must be an array of strings."
-    );
-  }
-};
-
-const validateDifficulty = (difficulty) => {
-  if (!Object.values(QuizDifficulty).includes(difficulty)) {
-    throw new ValidationError("Invalid 'difficulty'.");
   }
 };
 
 const validateTimeLimit = (timeLimit) => {
-  if (timeLimit !== null && !validator.isInt(String(timeLimit), { min: 0 })) {
+  if (timeLimit !== null && !validator.isInt(String(timeLimit), { min: 60 })) {
     throw new ValidationError(
-      "Invalid 'timeLimit', it must be a positive integer or null."
+      "Invalid 'timeLimit', it must be an integer greater than 60 or null"
     );
   }
 };
@@ -66,43 +55,18 @@ const validateTimeLimit = (timeLimit) => {
 const validateAttemptLimit = (attemptLimit) => {
   if (
     attemptLimit !== null &&
-    !validator.isInt(String(attemptLimit), { min: 0 })
+    !validator.isInt(String(attemptLimit), { min: 1 })
   ) {
     throw new ValidationError(
-      "Invalid 'attemptLimit', it must be a positive integer or null."
+      "Invalid 'attemptLimit', it must be an integer greater than 1 or null"
     );
-  }
-};
-
-const validateDueDate = (dueDate) => {
-  if (
-    dueDate !== null &&
-    (typeof dueDate !== "string" || !validator.isISO8601(dueDate))
-  ) {
-    throw new ValidationError(
-      "Invalid 'dueDate', it must be an ISO 8601 date string or null."
-    );
-  }
-};
-
-const validatePassingScore = (passingScore) => {
-  if (!validator.isInt(String(passingScore), { min: 0 })) {
-    throw new ValidationError(
-      `Invalid 'passingScore', it must be a positive integer.`
-    );
-  }
-};
-
-const validateQuestions = (questions) => {
-  if (!Array.isArray(questions)) {
-    throw new ValidationError("Invalid 'questions', it must be an array.");
   }
 };
 
 const validatePage = (page) => {
   if (!validator.isInt(String(page), { min: 1 })) {
     throw new ValidationError(
-      "Invalid 'page', it must be an integer greater than one"
+      "Invalid 'page', it must be an integer greater than 1"
     );
   }
 };
@@ -110,7 +74,7 @@ const validatePage = (page) => {
 const validateLimit = (limit) => {
   if (!validator.isInt(String(limit), { min: 1 })) {
     throw new ValidationError(
-      "Invalid 'limit', it must be an integer greater than one"
+      "Invalid 'limit', it must be an integer greater than 1"
     );
   }
 };
@@ -121,62 +85,34 @@ const validateStatus = (status) => {
   }
 };
 
-const createQuiz = async (clientId, data) => {
-  const {
-    title,
-    description,
-    categories = [],
-    difficulty = QuizDifficulty.EASY,
-    timeLimit = null,
-    attemptLimit = null,
-    dueDate = null,
-    passingScore = 0,
-    questions = [],
-  } = data;
+// Use Cases
 
+const createQuiz = async (
+  clientId,
+  { title, description, timeLimit, attemptLimit } = {}
+) => {
   validateTitle(title);
   validateDescription(description);
-  validateCategories(categories);
-  validateDifficulty(difficulty);
   validateTimeLimit(timeLimit);
   validateAttemptLimit(attemptLimit);
-  validateDueDate(dueDate);
-  validatePassingScore(passingScore);
-  validateQuestions(questions);
-
-  const createdQuestions = await questionService.createQuestions(
-    clientId,
-    questions
-  );
 
   const quiz = await quizRepository.createQuiz(clientId, {
     title,
     description,
-    categories,
-    difficulty,
     timeLimit,
     attemptLimit,
-    dueDate,
-    passingScore,
     status: QuizStatus.DRAFTED,
-    questions: createdQuestions.map((question) => question.id),
+    questions: [],
   });
 
   return quiz;
 };
 
-const updateQuiz = async (clientId, quizId, data) => {
-  let {
-    title,
-    description,
-    categories,
-    difficulty,
-    timeLimit,
-    attemptLimit,
-    dueDate,
-    passingScore,
-  } = data;
-
+const updateQuiz = async (
+  clientId,
+  quizId,
+  { title, description, timeLimit, attemptLimit }
+) => {
   validateId(quizId);
 
   const quiz = await quizRepository.retrieveQuiz(clientId, quizId);
@@ -193,31 +129,19 @@ const updateQuiz = async (clientId, quizId, data) => {
 
   if (title === undefined) title = quiz.title;
   if (description === undefined) description = quiz.description;
-  if (categories === undefined) categories = quiz.categories;
-  if (difficulty === undefined) difficulty = quiz.difficulty;
   if (timeLimit === undefined) timeLimit = quiz.timeLimit;
   if (attemptLimit === undefined) attemptLimit = quiz.attemptLimit;
-  if (dueDate === undefined) dueDate = quiz.dueDate;
-  if (passingScore === undefined) passingScore = quiz.passingScore;
 
   validateTitle(title);
   validateDescription(description);
-  validateCategories(categories);
-  validateDifficulty(difficulty);
   validateTimeLimit(timeLimit);
   validateAttemptLimit(attemptLimit);
-  validateDueDate(dueDate);
-  validatePassingScore(passingScore);
 
   return quizRepository.updateQuiz(clientId, quizId, {
     title,
     description,
-    categories,
-    difficulty,
     timeLimit,
     attemptLimit,
-    dueDate,
-    passingScore,
   });
 };
 
@@ -302,10 +226,10 @@ const deleteQuiz = async (clientId, quizId) => {
     throw new NotExistError("There is no quiz with this ID.");
   }
 
-  console.log(quiz);
-
   await Promise.all(
-    quiz.questions.map((q) => questionService.deleteQuestion(clientId, q.id))
+    quiz.questions.map((questionId) =>
+      questionService.deleteQuestion(clientId, questionId)
+    )
   );
 
   return quiz;
@@ -323,10 +247,11 @@ const retrieveQuiz = async (clientId, quizId) => {
   return quiz;
 };
 
-const retrieveQuizzes = async (clientId, filter, pagination) => {
-  const { status = QuizStatus.PUBLISHED } = filter;
-  let { page = 1, limit = 20 } = pagination;
-
+const retrieveQuizzes = async (
+  clientId,
+  { status = QuizStatus.PUBLISHED } = {},
+  { page = 1, limit = 20 } = {}
+) => {
   validateStatus(status);
   validatePage(page);
   validateLimit(limit);
@@ -356,7 +281,11 @@ const retrieveQuizzes = async (clientId, filter, pagination) => {
   };
 };
 
-const createQuestion = async (clientId, quizId, data) => {
+const addQuestion = async (
+  clientId,
+  quizId,
+  { type, text, options, answer, points }
+) => {
   validateId(quizId);
 
   const quiz = await quizRepository.retrieveQuiz(clientId, quizId);
@@ -371,18 +300,28 @@ const createQuestion = async (clientId, quizId, data) => {
     );
   }
 
-  const question = await questionService.createQuestion(clientId, data);
-
-  quiz.questions.push(question);
-
-  await quizRepository.updateQuiz(clientId, quizId, {
-    questions: quiz.questions.map((q) => q.id),
+  const questions = quiz.questions;
+  const question = await questionService.createQuestion(clientId, {
+    type,
+    text,
+    options,
+    answer,
+    points,
   });
+
+  questions.push(question.id);
+
+  await quizRepository.updateQuiz(clientId, quizId, { questions });
 
   return question;
 };
 
-const updateQuestion = async (clientId, quizId, questionId, data) => {
+const updateQuestion = async (
+  clientId,
+  quizId,
+  questionId,
+  { type, text, options, answer, points }
+) => {
   validateId(quizId);
 
   const quiz = await quizRepository.retrieveQuiz(clientId, quizId);
@@ -397,16 +336,23 @@ const updateQuestion = async (clientId, quizId, questionId, data) => {
     );
   }
 
-  const index = quiz.questions.findIndex((q) => q.id === questionId);
+  const questions = quiz.questions;
+  const index = questions.findIndex((question) => question === questionId);
 
   if (index === -1) {
     throw new NotExistError("There is no question with this ID for this quiz.");
   }
 
-  return questionService.updateQuestion(clientId, questionId, data);
+  return questionService.updateQuestion(clientId, questionId, {
+    type,
+    text,
+    options,
+    answer,
+    points,
+  });
 };
 
-const deleteQuestion = async (clientId, quizId, questionId) => {
+const removeQuestion = async (clientId, quizId, questionId) => {
   validateId(quizId);
 
   const quiz = await quizRepository.retrieveQuiz(clientId, quizId);
@@ -421,19 +367,18 @@ const deleteQuestion = async (clientId, quizId, questionId) => {
     );
   }
 
-  const index = quiz.questions.findIndex((q) => q.id === questionId);
+  const questions = quiz.questions;
+  const index = questions.findIndex((question) => question === questionId);
 
   if (index === -1) {
     throw new NotExistError("There is no question with this ID for this quiz.");
   }
 
-  const question = quiz.questions.splice(index, 1)[0];
+  questions.splice(index, 1)[0];
 
-  await questionService.deleteQuestion(clientId, questionId);
+  const question = await questionService.deleteQuestion(clientId, questionId);
 
-  await quizRepository.updateQuiz(clientId, quizId, {
-    questions: quiz.questions.map((q) => q.id),
-  });
+  await quizRepository.updateQuiz(clientId, quizId, { questions });
 
   return question;
 };
@@ -448,7 +393,7 @@ module.exports = {
   deleteQuiz,
   retrieveQuiz,
   retrieveQuizzes,
-  createQuestion,
+  addQuestion,
   updateQuestion,
-  deleteQuestion,
+  removeQuestion,
 };

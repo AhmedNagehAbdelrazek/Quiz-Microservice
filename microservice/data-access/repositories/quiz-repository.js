@@ -1,103 +1,80 @@
-const { getModelsForClient } = require("../models");
+const { getModels } = require("../models");
 
-const createQuiz = async (clientId, data) => {
-  const { Quiz } = getModelsForClient(clientId);
+const createQuiz = async (
+  clientId,
+  { title, description, timeLimit, attemptLimit, status, questions }
+) => {
+  const { Quiz } = getModels(clientId);
 
-  const quiz = await Quiz.create(data);
-
-  await quiz.populate("questions");
+  const quiz = await Quiz.create({
+    title,
+    description,
+    timeLimit,
+    attemptLimit,
+    status,
+    questions,
+  });
 
   return toDTO(quiz);
 };
 
-const updateQuiz = async (clientId, quizId, data) => {
-  const { Quiz } = getModelsForClient(clientId);
+const updateQuiz = async (
+  clientId,
+  quizId,
+  { title, description, timeLimit, attemptLimit, status, questions }
+) => {
+  const { Quiz } = getModels(clientId);
 
-  const quiz = await Quiz.findByIdAndUpdate(quizId, data, {
-    new: true,
-  });
+  const quiz = await Quiz.findByIdAndUpdate(
+    quizId,
+    { title, description, timeLimit, attemptLimit, status, questions },
+    {
+      new: true,
+    }
+  );
 
-  if (!quiz) {
-    return null;
-  }
-
-  await quiz.populate("questions");
-
-  return toDTO(quiz);
+  return quiz ? toDTO(quiz) : null;
 };
 
 const deleteQuiz = async (clientId, quizId) => {
-  const { Quiz } = getModelsForClient(clientId);
+  const { Quiz } = getModels(clientId);
 
   const quiz = await Quiz.findByIdAndDelete(quizId);
 
-  if (!quiz) {
-    return null;
-  }
-
-  await quiz.populate("questions");
-
-  return toDTO(quiz);
+  return quiz ? toDTO(quiz) : null;
 };
 
 const retrieveQuiz = async (clientId, quizId) => {
-  const { Quiz } = getModelsForClient(clientId);
+  const { Quiz } = getModels(clientId);
 
   const quiz = await Quiz.findById(quizId);
 
-  if (!quiz) {
-    return null;
-  }
-
-  await quiz.populate("questions");
-
-  return toDTO(quiz);
+  return quiz ? toDTO(quiz) : null;
 };
 
-const retrieveQuizzes = async (clientId, filter, pagination) => {
-  const { Quiz } = getModelsForClient(clientId);
+const retrieveQuizzes = async (clientId, { status }, { skip, limit }) => {
+  const { Quiz } = getModels(clientId);
 
-  const quizzes = await Quiz.find(filter)
-    .skip(pagination.skip)
-    .limit(pagination.limit)
-    .populate("questions");
+  const quizzes = await Quiz.find({ status }).skip(skip).limit(limit);
 
   return quizzes.map(toDTO);
 };
 
-const countQuizzes = (clientId, filter) => {
-  const { Quiz } = getModelsForClient(clientId);
+const countQuizzes = (clientId, { status }) => {
+  const { Quiz } = getModels(clientId);
 
-  return Quiz.countDocuments(filter);
+  return Quiz.countDocuments({ status });
 };
 
-const toDTO = ({
-  _id,
-  title,
-  description,
-  categories,
-  difficulty,
-  timeLimit,
-  attemptLimit,
-  dueDate,
-  passingScore,
-  status,
-  questions,
-}) => {
+const toDTO = (quiz) => {
   return {
-    id: _id,
-    title,
-    description,
-    categories,
-    difficulty,
-    timeLimit,
-    attemptLimit,
-    dueDate,
-    passingScore,
-    status,
-    questions: questions.map(({ _id, type, text, options, answer, points }) => {
-      return { id: _id, type, text, options, answer, points };
-    }),
+    id: quiz._id,
+    title: quiz.title,
+    description: quiz.description,
+    timeLimit: quiz.timeLimit,
+    attemptLimit: quiz.attemptLimit,
+    status: quiz.status,
+    questions: quiz.questions,
   };
 };
 

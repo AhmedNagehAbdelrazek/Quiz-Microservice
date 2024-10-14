@@ -186,12 +186,12 @@ const retrieveQuizzes = asyncHandler(async (req, res) => {
   });
 });
 
-const createQuestion = asyncHandler(async (req, res) => {
+const addQuestion = asyncHandler(async (req, res) => {
   const client = req.client;
   const { quizId } = req.params;
   const { type, text, options, answer, points } = req.body;
 
-  const question = await quizService.createQuestion(client.id, quizId, {
+  const question = await quizService.addQuestion(client.id, quizId, {
     type,
     text,
     options,
@@ -227,12 +227,12 @@ const updateQuestion = asyncHandler(async (req, res) => {
   });
 });
 
-const deleteQuestion = asyncHandler(async (req, res) => {
+const removeQuestion = asyncHandler(async (req, res) => {
   const client = req.client;
   const { quizId, questionId } = req.params;
   const { type } = req.query;
 
-  await quizService.deleteQuestion(client.id, quizId, questionId);
+  await quizService.removeQuestion(client.id, quizId, questionId);
 
   res.status(204).send();
 });
@@ -248,7 +248,7 @@ module.exports = {
   restoreQuiz,
   retrieveQuiz,
   retrieveQuizzes,
-  createQuestion,
+  addQuestion,
   updateQuestion,
-  deleteQuestion,
+  removeQuestion,
 };

@@ -1,18 +1,18 @@
 const Client = require("./client");
-const generateQuizModelForClient = require("./quiz");
-const generateQuestionModelForClient = require("./question");
+const generateQuizModel = require("./quiz");
+const generateQuestionModel = require("./question");
 
 const cache = new Map();
 
-const getModelsForClient = (id) => {
+const getModels = (id) => {
   const models = cache.get(id);
 
   if (models) {
     return models;
   }
 
-  const Quiz = generateQuizModelForClient(id);
-  const Question = generateQuestionModelForClient(id);
+  const Quiz = generateQuizModel(id);
+  const Question = generateQuestionModel(id);
 
   cache.set(id, { Quiz, Question });
 
@@ -21,5 +21,5 @@ const getModelsForClient = (id) => {
 
 module.exports = {
   Client,
-  getModelsForClient,
+  getModels,
 };
