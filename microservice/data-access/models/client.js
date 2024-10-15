@@ -1,12 +1,10 @@
 const mongoose = require("mongoose");
-const { v4: genUUID } = require("uuid");
-
-const { ClientStatus } = require("../../business-logic/enums");
+const { v4: generateUUID } = require("uuid");
 
 const ClientSchema = new mongoose.Schema({
   _id: {
     type: String,
-    default: genUUID,
+    default: generateUUID,
   },
   name: {
     type: String,
@@ -22,8 +20,7 @@ const ClientSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: Object.values(ClientStatus),
-    default: ClientStatus.ACTIVE,
+    required: true,
   },
 });
 

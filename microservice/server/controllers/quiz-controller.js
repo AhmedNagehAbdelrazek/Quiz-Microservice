@@ -4,28 +4,13 @@ const { quizService } = require("../../business-logic/services");
 
 const createQuiz = asyncHandler(async (req, res) => {
   const client = req.client;
-  const {
-    title,
-    description,
-    categories,
-    difficulty,
-    timeLimit,
-    attemptLimit,
-    dueDate,
-    passingScore,
-    questions,
-  } = req.body;
+  const { title, description, timeLimit, attemptLimit } = req.body;
 
   const quiz = await quizService.createQuiz(client.id, {
     title,
     description,
-    categories,
-    difficulty,
     timeLimit,
     attemptLimit,
-    dueDate,
-    passingScore,
-    questions,
   });
 
   res.status(201).json({
@@ -39,28 +24,13 @@ const createQuiz = asyncHandler(async (req, res) => {
 const updateQuiz = asyncHandler(async (req, res) => {
   const client = req.client;
   const { quizId } = req.params;
-  const {
-    title,
-    description,
-    categories,
-    difficulty,
-    timeLimit,
-    attemptLimit,
-    dueDate,
-    passingScore,
-    isPublished,
-  } = req.body;
+  const { title, description, timeLimit, attemptLimit } = req.body;
 
   const quiz = await quizService.updateQuiz(client.id, quizId, {
     title,
     description,
-    categories,
-    difficulty,
     timeLimit,
     attemptLimit,
-    dueDate,
-    passingScore,
-    isPublished,
   });
 
   res.status(200).json({
@@ -137,20 +107,6 @@ const deletedQuiz = asyncHandler(async (req, res) => {
   return res.sendStatus(204);
 });
 
-const restoreQuiz = asyncHandler(async (req, res) => {
-  const client = req.client;
-  const { quizId } = req.params;
-
-  const quiz = await quizService.restoreQuiz(client.id, quizId);
-
-  return res.status(200).json({
-    success: true,
-    data: {
-      quiz: quiz,
-    },
-  });
-});
-
 const retrieveQuiz = asyncHandler(async (req, res) => {
   const client = req.client;
   const { quizId } = req.params;
@@ -167,7 +123,7 @@ const retrieveQuiz = asyncHandler(async (req, res) => {
 
 const retrieveQuizzes = asyncHandler(async (req, res) => {
   const client = req.client;
-  const { page, limit, status } = req.query;
+  const { status, page, limit } = req.query;
 
   const { quizzes, pagination } = await quizService.retrieveQuizzes(
     client.id,
@@ -245,7 +201,6 @@ module.exports = {
   archiveQuiz,
   unarchiveQuiz,
   deletedQuiz,
-  restoreQuiz,
   retrieveQuiz,
   retrieveQuizzes,
   addQuestion,
