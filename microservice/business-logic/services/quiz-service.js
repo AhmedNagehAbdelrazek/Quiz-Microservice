@@ -10,8 +10,10 @@ const {
 
 const questionService = require("../services/question-service");
 
-const { quizRepository } = require("../../data-access/repositories");
 
+const { quizRepository } = require("../../data-access/repositories");
+const { userRepository } = require("../../data-access/repositories");
+const { attemptRepository } = require("../../data-access/repositories");
 // Constants
 
 const TITLE_LENGTH = { min: 1, max: 200 };
@@ -383,6 +385,51 @@ const removeQuestion = async (clientId, quizId, questionId) => {
   return question;
 };
 
+const startQuiz = async (clientId, quizId, userId) => {
+  validateId(quizId);
+
+  const quiz = await quizRepository.retrieveQuiz(clientId, quizId);
+
+  if (!quiz) {
+    throw new NotExistError("There is no quiz with this Id");
+  }
+
+  if (quiz.status !== QuizStatus.DRAFTED) {
+    throw new InvalidStatusError(
+      "This quiz is not drafted and cannot be updated."
+    );
+  }
+
+  let user = await userRepository.retrieveUser(clientId, userId);
+  if (!user) {
+    user = await userRepository.createUser(clientId);
+  }
+
+  const attemptsCount = await attemptRepository.countattempts(user.id);
+  if (attemptsCount === quiz.attemptLimit) {
+    throw new Error("you have reached the maximum allowed number of attempts for the quiz.");
+  }
+  
+  let attempt = await attemptRepository.findActiveAttempts({
+    quizId: quiz.id,
+    userId: user.id,
+  });
+
+  if (attempt) {
+    throw new Error("you already have an active attempt in progress");
+  }
+
+  attempt = await attemptRepository.createAttempt({
+    userId: user.id,
+    quizId: quiz.id,
+    startedAt: new Date(),
+    status: 'started',
+  });
+
+  return attempt;
+  
+}
+
 module.exports = {
   createQuiz,
   updateQuiz,
@@ -396,4 +443,5 @@ module.exports = {
   addQuestion,
   updateQuestion,
   removeQuestion,
+  startQuiz,
 };

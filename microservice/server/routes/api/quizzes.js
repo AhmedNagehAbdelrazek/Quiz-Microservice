@@ -25,6 +25,8 @@ router.post("/:quizId/unarchive", quizController.unarchiveQuiz);
 
 router.post("/:quizId/questions", quizController.addQuestion);
 
+router.post("/:quizId/users/:userId/start", quizController.startQuiz);
+
 router
   .route("/:quizId/questions/:questionId")
   .patch(quizController.updateQuestion)

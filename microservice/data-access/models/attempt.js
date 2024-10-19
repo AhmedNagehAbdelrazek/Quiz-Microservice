@@ -19,7 +19,7 @@ const generateAttemptModel = (id) => {
     },
     startedAt: {
       type: Date,
-      required: true,
+      required: Date.now,
     },
     submittedAt: {
       type: Date,
