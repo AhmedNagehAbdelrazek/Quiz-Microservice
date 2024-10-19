@@ -197,11 +197,12 @@ const startQuiz = asyncHandler(async (req, res) => {
   const clientId = req.client;
   const {userId, quizId} = req.params;
 
-  const attempt = await quizService.startQuiz(clientId, quizId, userId);
+  const {attempt, quiz} = await quizService.startQuiz(clientId, quizId, userId);
 
   return res.status(201).json({
     success: "true",
     data: {attempt,
+      quiz
     }
   })
 })

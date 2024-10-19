@@ -426,7 +426,7 @@ const startQuiz = async (clientId, quizId, userId) => {
     status: 'started',
   });
 
-  return attempt;
+  return {attempt, quiz};
   
 }
 
