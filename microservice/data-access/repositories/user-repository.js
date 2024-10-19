@@ -1,5 +1,12 @@
 const { getModels } = require("../models");
 
+
+const toDTO = (user) => {
+    return {
+      id: user._id,
+    }
+  };
+
 const createUser = async (clientId) => {
     const {User} = getModels(clientId);
 

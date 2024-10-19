@@ -1,6 +1,13 @@
 const { getModels } = require("../models");
 const { retrieveClient } = require("./client-repository");
 
+
+const toDTO = (attempt) => {
+    return {
+      id: attempt._id,
+    }
+  };
+
 const createAttempt = async (clientId, data) => {
     const {Attempt} = getModels(clientId)
     const {userId, quizId, startedAt, status} = data;
