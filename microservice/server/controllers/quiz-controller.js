@@ -193,6 +193,20 @@ const removeQuestion = asyncHandler(async (req, res) => {
   res.status(204).send();
 });
 
+const startQuiz = asyncHandler(async (req, res) => {
+  const clientId = req.client;
+  const {userId, quizId} = req.params;
+
+  const {attempt, quiz} = await quizService.startQuiz(clientId, quizId, userId);
+
+  return res.status(201).json({
+    success: "true",
+    data: {attempt,
+      quiz
+    }
+  })
+})
+
 module.exports = {
   createQuiz,
   updateQuiz,
@@ -206,4 +220,5 @@ module.exports = {
   addQuestion,
   updateQuestion,
   removeQuestion,
+  startQuiz,
 };

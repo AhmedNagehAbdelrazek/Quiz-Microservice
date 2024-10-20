@@ -1,5 +1,18 @@
 const { getModels } = require("../models");
 
+
+const toDTO = (quiz) => {
+  return {
+    id: quiz._id,
+    title: quiz.title,
+    description: quiz.description,
+    timeLimit: quiz.timeLimit,
+    attemptLimit: quiz.attemptLimit,
+    status: quiz.status,
+    questions: quiz.questions,
+  };
+};
+
 const createQuiz = async (
   clientId,
   { title, description, timeLimit, attemptLimit, status, questions }
@@ -64,18 +77,6 @@ const countQuizzes = (clientId, { status }) => {
   const { Quiz } = getModels(clientId);
 
   return Quiz.countDocuments({ status });
-};
-
-const toDTO = (quiz) => {
-  return {
-    id: quiz._id,
-    title: quiz.title,
-    description: quiz.description,
-    timeLimit: quiz.timeLimit,
-    attemptLimit: quiz.attemptLimit,
-    status: quiz.status,
-    questions: quiz.questions,
-  };
 };
 
 module.exports = {
