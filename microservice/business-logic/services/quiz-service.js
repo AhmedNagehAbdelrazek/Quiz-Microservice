@@ -1,6 +1,6 @@
 const validator = require("validator");
 
-const { QuizStatus } = require("../enums");
+const { QuizStatus, AttemptStatus } = require("../enums");
 
 const {
   ValidationError,
@@ -8,12 +8,16 @@ const {
   InvalidStatusError,
 } = require("../errors/common");
 
+const { AttemptLimitError, ActiveAttemptError } = require("../errors/attempt");
+
 const questionService = require("../services/question-service");
 
+const {
+  quizRepository,
+  userRepository,
+  attemptRepository,
+} = require("../../data-access/repositories");
 
-const { quizRepository } = require("../../data-access/repositories");
-const { userRepository } = require("../../data-access/repositories");
-const { attemptRepository } = require("../../data-access/repositories");
 // Constants
 
 const TITLE_LENGTH = { min: 1, max: 200 };
@@ -21,9 +25,9 @@ const DESCRIPTION_LENGTH = { min: 1, max: 500 };
 
 // Validations
 
-const validateId = (id) => {
+const validateId = (id, message = "Invalid ID, it must be a UUID.") => {
   if (!validator.isUUID(id)) {
-    throw new ValidationError("Invalid quiz ID, it must be a UUID.");
+    throw new ValidationError(message);
   }
 };
 
@@ -107,6 +111,8 @@ const createQuiz = async (
     questions: [],
   });
 
+  delete quiz.questions;
+
   return quiz;
 };
 
@@ -115,7 +121,7 @@ const updateQuiz = async (
   quizId,
   { title, description, timeLimit, attemptLimit }
 ) => {
-  validateId(quizId);
+  validateId(quizId, "Invalid quiz ID, it must be a UUID.");
 
   const quiz = await quizRepository.retrieveQuiz(clientId, quizId);
 
@@ -139,16 +145,20 @@ const updateQuiz = async (
   validateTimeLimit(timeLimit);
   validateAttemptLimit(attemptLimit);
 
-  return quizRepository.updateQuiz(clientId, quizId, {
+  const updatedQuiz = await quizRepository.updateQuiz(clientId, quizId, {
     title,
     description,
     timeLimit,
     attemptLimit,
   });
+
+  delete updatedQuiz.questions;
+
+  return updatedQuiz;
 };
 
 const publishQuiz = async (clientId, quizId) => {
-  validateId(quizId);
+  validateId(quizId, "Invalid quiz ID, it must be a UUID.");
 
   const quiz = await quizRepository.retrieveQuiz(clientId, quizId);
 
@@ -160,13 +170,17 @@ const publishQuiz = async (clientId, quizId) => {
     throw new InvalidStatusError("The quiz has already been published.");
   }
 
-  return quizRepository.updateQuiz(clientId, quizId, {
+  const updatedQuiz = await quizRepository.updateQuiz(clientId, quizId, {
     status: QuizStatus.PUBLISHED,
   });
+
+  delete updatedQuiz.questions;
+
+  return updatedQuiz;
 };
 
 const unpublishQuiz = async (clientId, quizId) => {
-  validateId(quizId);
+  validateId(quizId, "Invalid quiz ID, it must be a UUID.");
 
   const quiz = await quizRepository.retrieveQuiz(clientId, quizId);
 
@@ -178,13 +192,17 @@ const unpublishQuiz = async (clientId, quizId) => {
     throw new InvalidStatusError("This quiz has already been drafted.");
   }
 
-  return quizRepository.updateQuiz(clientId, quizId, {
+  const updatedQuiz = await quizRepository.updateQuiz(clientId, quizId, {
     status: QuizStatus.DRAFTED,
   });
+
+  delete updatedQuiz.questions;
+
+  return updatedQuiz;
 };
 
 const archiveQuiz = async (clientId, quizId) => {
-  validateId(quizId);
+  validateId(quizId, "Invalid quiz ID, it must be a UUID.");
 
   const quiz = await quizRepository.retrieveQuiz(clientId, quizId);
 
@@ -196,13 +214,17 @@ const archiveQuiz = async (clientId, quizId) => {
     throw new InvalidStatusError("The quiz has already been archived.");
   }
 
-  return quizRepository.updateQuiz(clientId, quizId, {
+  const updatedQuiz = await quizRepository.updateQuiz(clientId, quizId, {
     status: QuizStatus.ARCHIVED,
   });
+
+  delete updatedQuiz.questions;
+
+  return updatedQuiz;
 };
 
 const unarchieQuiz = async (clientId, quizId) => {
-  validateId(quizId);
+  validateId(quizId, "Invalid quiz ID, it must be a UUID.");
 
   const quiz = await quizRepository.retrieveQuiz(clientId, quizId);
 
@@ -214,33 +236,21 @@ const unarchieQuiz = async (clientId, quizId) => {
     throw new InvalidStatusError("This quiz has already been drafted.");
   }
 
-  return quizRepository.updateQuiz(clientId, quizId, {
+  const updatedQuiz = await quizRepository.updateQuiz(clientId, quizId, {
     status: QuizStatus.DRAFTED,
   });
-};
 
-const deleteQuiz = async (clientId, quizId) => {
-  validateId(quizId);
+  delete updatedQuiz.questions;
 
-  const quiz = await quizRepository.deleteQuiz(clientId, quizId);
-
-  if (!quiz) {
-    throw new NotExistError("There is no quiz with this ID.");
-  }
-
-  await Promise.all(
-    quiz.questions.map((questionId) =>
-      questionService.deleteQuestion(clientId, questionId)
-    )
-  );
-
-  return quiz;
+  return updatedQuiz;
 };
 
 const retrieveQuiz = async (clientId, quizId) => {
-  validateId(quizId);
+  validateId(quizId, "Invalid quiz ID, it must be a UUID.");
 
-  const quiz = await quizRepository.retrieveQuiz(clientId, quizId);
+  const quiz = await quizRepository.retrieveQuiz(clientId, quizId, {
+    fullQuestions: true,
+  });
 
   if (!quiz) {
     throw new NotExistError("There is no quiz with this ID.");
@@ -274,6 +284,10 @@ const retrieveQuizzes = async (
 
   const totalPages = Math.ceil(totalCount / limit);
 
+  quizzes.forEach((quiz) => {
+    delete quiz.questions;
+  });
+
   return {
     quizzes,
     pagination: {
@@ -288,7 +302,7 @@ const addQuestion = async (
   quizId,
   { type, text, options, answer, points }
 ) => {
-  validateId(quizId);
+  validateId(quizId, "Invalid quiz ID, it must be a UUID.");
 
   const quiz = await quizRepository.retrieveQuiz(clientId, quizId);
 
@@ -324,7 +338,7 @@ const updateQuestion = async (
   questionId,
   { type, text, options, answer, points }
 ) => {
-  validateId(quizId);
+  validateId(quizId, "Invalid quiz ID, it must be a UUID.");
 
   const quiz = await quizRepository.retrieveQuiz(clientId, quizId);
 
@@ -355,7 +369,7 @@ const updateQuestion = async (
 };
 
 const removeQuestion = async (clientId, quizId, questionId) => {
-  validateId(quizId);
+  validateId(quizId, "Invalid quiz ID, it must be a UUID.");
 
   const quiz = await quizRepository.retrieveQuiz(clientId, quizId);
 
@@ -385,50 +399,68 @@ const removeQuestion = async (clientId, quizId, questionId) => {
   return question;
 };
 
-const startQuiz = async (clientId, quizId, userId) => {
-  validateId(quizId);
+const startQuiz = async (clientId, userId, quizId) => {
+  validateId(userId, "Invalid user ID, it must be a UUID.");
+  validateId(quizId, "Invalid quiz ID, it must be a UUID.");
 
-  const quiz = await quizRepository.retrieveQuiz(clientId, quizId);
+  const quiz = await quizRepository.retrieveQuiz(clientId, quizId, {
+    fullQuestions: true,
+  });
 
-  if (!quiz) {
-    throw new NotExistError("There is no quiz with this Id");
+  if (!quiz || quiz.status !== QuizStatus.PUBLISHED) {
+    throw new NotExistError("There is no quiz with this ID.");
   }
 
-  if (quiz.status !== QuizStatus.DRAFTED) {
-    throw new InvalidStatusError(
-      "This quiz is not drafted and cannot be updated."
+  const user = await userRepository.upsertUser(clientId, userId);
+
+  const attemptsCount = await attemptRepository.countAttempts(
+    clientId,
+    userId,
+    quizId
+  );
+
+  if (attemptsCount === quiz.attemptLimit) {
+    throw new AttemptLimitError(
+      "You have reached the maximum allowed number of attempts for this quiz."
     );
   }
 
-  let user = await userRepository.retrieveUser(clientId, userId);
-  if (!user) {
-    user = await userRepository.createUser(clientId);
+  const activeAttempt = await attemptRepository.retrieveActiveAttempt(
+    clientId,
+    userId
+  );
+
+  if (activeAttempt) {
+    throw new ActiveAttemptError(
+      "You already have an active attempt in progress."
+    );
   }
 
-  const attemptsCount = await attemptRepository.countattempts(user.id);
-  if (attemptsCount === quiz.attemptLimit) {
-    throw new Error("you have reached the maximum allowed number of attempts for the quiz.");
-  }
-  
-  let attempt = await attemptRepository.findActiveAttempts({
-    quizId: quiz.id,
-    userId: user.id,
-  });
-
-  if (attempt) {
-    throw new Error("you already have an active attempt in progress");
-  }
-
-  attempt = await attemptRepository.createAttempt({
-    userId: user.id,
-    quizId: quiz.id,
+  const attempt = await attemptRepository.createAttempt(clientId, {
+    userId,
+    quizId,
     startedAt: new Date(),
-    status: 'started',
+    submittedAt: null,
+    status: AttemptStatus.STARTED,
+    responses: [],
   });
 
-  return {attempt, quiz};
-  
-}
+  delete quiz.attemptLimit;
+  delete quiz.status;
+
+  quiz.questions.forEach((question) => {
+    delete question.answer;
+  });
+
+  return {
+    id: attempt.id,
+    user,
+    quiz,
+    startedAt: attempt.startedAt,
+    submittedAt: attempt.submittedAt,
+    status: attempt.status,
+  };
+};
 
 module.exports = {
   createQuiz,
@@ -437,7 +469,6 @@ module.exports = {
   unpublishQuiz,
   archiveQuiz,
   unarchieQuiz,
-  deleteQuiz,
   retrieveQuiz,
   retrieveQuizzes,
   addQuestion,

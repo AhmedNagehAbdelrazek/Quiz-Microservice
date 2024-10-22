@@ -50,7 +50,7 @@ const publishQuiz = asyncHandler(async (req, res) => {
   return res.status(200).json({
     success: true,
     data: {
-      quiz: quiz,
+      quiz,
     },
   });
 });
@@ -64,7 +64,7 @@ const unpublishQuiz = asyncHandler(async (req, res) => {
   return res.status(200).json({
     success: true,
     data: {
-      quiz: quiz,
+      quiz,
     },
   });
 });
@@ -78,7 +78,7 @@ const archiveQuiz = asyncHandler(async (req, res) => {
   return res.status(200).json({
     success: true,
     data: {
-      quiz: quiz,
+      quiz,
     },
   });
 });
@@ -92,19 +92,9 @@ const unarchiveQuiz = asyncHandler(async (req, res) => {
   return res.status(200).json({
     success: true,
     data: {
-      quiz: quiz,
+      quiz,
     },
   });
-});
-
-const deletedQuiz = asyncHandler(async (req, res) => {
-  const client = req.client;
-  const { quizId } = req.params;
-  const { type } = req.query;
-
-  await quizService.deleteQuiz(client.id, quizId, type);
-
-  return res.sendStatus(204);
 });
 
 const retrieveQuiz = asyncHandler(async (req, res) => {
@@ -147,6 +137,8 @@ const addQuestion = asyncHandler(async (req, res) => {
   const { quizId } = req.params;
   const { type, text, options, answer, points } = req.body;
 
+  console.log(req.params);
+
   const question = await quizService.addQuestion(client.id, quizId, {
     type,
     text,
@@ -186,7 +178,6 @@ const updateQuestion = asyncHandler(async (req, res) => {
 const removeQuestion = asyncHandler(async (req, res) => {
   const client = req.client;
   const { quizId, questionId } = req.params;
-  const { type } = req.query;
 
   await quizService.removeQuestion(client.id, quizId, questionId);
 
@@ -194,18 +185,18 @@ const removeQuestion = asyncHandler(async (req, res) => {
 });
 
 const startQuiz = asyncHandler(async (req, res) => {
-  const clientId = req.client;
-  const {userId, quizId} = req.params;
+  const client = req.client;
+  const { userId, quizId } = req.params;
 
-  const {attempt, quiz} = await quizService.startQuiz(clientId, quizId, userId);
+  const attempt = await quizService.startQuiz(client.id, userId, quizId);
 
   return res.status(201).json({
-    success: "true",
-    data: {attempt,
-      quiz
-    }
-  })
-})
+    success: true,
+    data: {
+      attempt,
+    },
+  });
+});
 
 module.exports = {
   createQuiz,
@@ -214,7 +205,6 @@ module.exports = {
   unpublishQuiz,
   archiveQuiz,
   unarchiveQuiz,
-  deletedQuiz,
   retrieveQuiz,
   retrieveQuizzes,
   addQuestion,

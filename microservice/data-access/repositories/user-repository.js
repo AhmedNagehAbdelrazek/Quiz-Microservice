@@ -1,29 +1,21 @@
 const { getModels } = require("../models");
 
-
 const toDTO = (user) => {
-    return {
-      id: user._id,
-    }
+  return {
+    id: user._id,
   };
-
-const createUser = async (clientId) => {
-    const {User} = getModels(clientId);
-
-    const user = await User.create();
-
-    return toDTO(user);
-
-}
-
-const retrieveUser = async (clientId, userId) => {
-    const {User} = getModels(clientId);
-
-    const user = User.findById(userId);
-
-    return user ? toDTO(user) : null;
-}
-
-module.exports = {createUser,
-    retrieveUser,
 };
+
+const upsertUser = async (clientId, userId) => {
+  const { User } = getModels(clientId);
+
+  const user = await User.findOneAndUpdate(
+    { _id: userId },
+    {},
+    { upsert: true, new: true }
+  );
+
+  return toDTO(user);
+};
+
+module.exports = { upsertUser };

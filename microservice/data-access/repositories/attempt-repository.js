@@ -1,44 +1,58 @@
 const { getModels } = require("../models");
-const { retrieveClient } = require("./client-repository");
-
+const { AttemptStatus } = require("../../business-logic/enums");
 
 const toDTO = (attempt) => {
-    return {
-      id: attempt._id,
-    }
+  return {
+    id: attempt._id,
+    userId: attempt.user,
+    quizId: attempt.quiz,
+    startedAt: attempt.startedAt,
+    submittedAt: attempt.submittedAt,
+    status: attempt.status,
+    responses: attempt.responses,
   };
+};
 
-const createAttempt = async (clientId, data) => {
-    const {Attempt} = getModels(clientId)
-    const {userId, quizId, startedAt, status} = data;
+const createAttempt = async (
+  clientId,
+  { userId, quizId, startedAt, submittedAt, status, responses } = {}
+) => {
+  const { Attempt } = getModels(clientId);
 
-    const attempt = await Attempt.create({
-        userId,
-        quizId,
-        startedAt,
-        status
-    });
-    
-    return attempt;
-}
+  const attempt = await Attempt.create({
+    user: userId,
+    quiz: quizId,
+    startedAt,
+    submittedAt,
+    status,
+    responses,
+  });
 
-const findActiveAttempts = async (clientId, data ) => {
-    const {Attempt} = getModels(clientId);
-    const {userId, quizId} = data;
+  return attempt;
+};
 
-    const attempt = await Attempt.findOne({
-        userId,
-        quizId,
-        sumbittedAt: null,
-    });
+const retrieveActiveAttempt = async (clientId, userId) => {
+  const { Attempt } = getModels(clientId);
 
-    return attempt ? toDTO(attempt) : null;
-}
+  const attempt = await Attempt.findOne({
+    user: userId,
+    status: AttemptStatus.STARTED,
+  });
 
-const countattempts = async (clientId, userId) => {
-    const {Attempt} = getModels(clientId);
+  return attempt ? toDTO(attempt) : null;
+};
 
-    const numberOfAttempts = await Attempt.countDocuments({userId});
-    return numberOfAttempts;
-}
-module.exports = {};
+const countAttempts = (clientId, userId, quizId) => {
+  const { Attempt } = getModels(clientId);
+
+  return Attempt.countDocuments({
+    user: userId,
+    quiz: quizId,
+  });
+};
+
+module.exports = {
+  createAttempt,
+  retrieveActiveAttempt,
+  countAttempts,
+};
