@@ -1,5 +1,31 @@
 const { getModels } = require("../models");
 
+const toDTO = (quiz) => {
+  return {
+    id: quiz._id,
+    title: quiz.title,
+    description: quiz.description,
+    timeLimit: quiz.timeLimit,
+    attemptLimit: quiz.attemptLimit,
+    status: quiz.status,
+    questions: quiz.questions.map((question) => {
+      // In case we need the full question objects
+      if (typeof question === "object") {
+        return {
+          id: question._id,
+          type: question.type,
+          text: question.text,
+          options: question.options,
+          answer: question.answer,
+          points: question.points,
+        };
+      }
+
+      return question;
+    }),
+  };
+};
+
 const createQuiz = async (
   clientId,
   { title, description, timeLimit, attemptLimit, status, questions }
@@ -44,12 +70,22 @@ const deleteQuiz = async (clientId, quizId) => {
   return quiz ? toDTO(quiz) : null;
 };
 
-const retrieveQuiz = async (clientId, quizId) => {
+const retrieveQuiz = async (
+  clientId,
+  quizId,
+  { fullQuestions = false } = {} /* In case we need the full question objects */
+) => {
   const { Quiz } = getModels(clientId);
 
   const quiz = await Quiz.findById(quizId);
 
-  return quiz ? toDTO(quiz) : null;
+  if (!quiz) {
+    return null;
+  }
+
+  if (fullQuestions) await quiz.populate("questions");
+
+  return toDTO(quiz);
 };
 
 const retrieveQuizzes = async (clientId, { status }, { skip, limit }) => {
@@ -64,18 +100,6 @@ const countQuizzes = (clientId, { status }) => {
   const { Quiz } = getModels(clientId);
 
   return Quiz.countDocuments({ status });
-};
-
-const toDTO = (quiz) => {
-  return {
-    id: quiz._id,
-    title: quiz.title,
-    description: quiz.description,
-    timeLimit: quiz.timeLimit,
-    attemptLimit: quiz.attemptLimit,
-    status: quiz.status,
-    questions: quiz.questions,
-  };
 };
 
 module.exports = {

@@ -22,9 +22,15 @@ router.use((req, res) => {
 
 const authErrors = require("../../business-logic/errors/auth");
 const commonErrors = require("../../business-logic/errors/common");
+const attemptError = require("../../business-logic/errors/attempt");
 
 const errorCodes = {
-  400: [commonErrors.ValidationError, commonErrors.InvalidStatusError],
+  400: [
+    commonErrors.ValidationError,
+    commonErrors.InvalidStatusError,
+    attemptError.AttemptLimitError,
+    attemptError.ActiveAttemptError,
+  ],
   401: [authErrors.InvalidOrExpiredTokenError],
   404: [commonErrors.NotExistError],
 };
