@@ -51,8 +51,22 @@ const countAttempts = (clientId, userId, quizId) => {
   });
 };
 
+const retrieveAttemptById = async (clientId, attemptId) => {
+  const { Attempt } = getModels(clientId);
+  const attempt = await Attempt.findById(attemptId);
+  return attempt ? toDTO(attempt) : null;
+};
+
+const updateAttempt = async (clientId, attemptId, updateData) => {
+  const { Attempt } = getModels(clientId);
+  const updatedAttempt = await Attempt.findByIdAndUpdate(attemptId, updateData, { new: true });
+  return updatedAttempt;
+};
+
 module.exports = {
   createAttempt,
   retrieveActiveAttempt,
   countAttempts,
+  retrieveAttemptById,
+  updateAttempt,
 };
