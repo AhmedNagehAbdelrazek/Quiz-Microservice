@@ -11,11 +11,13 @@ const {
 const { AttemptLimitError, ActiveAttemptError } = require("../errors/attempt");
 
 const questionService = require("../services/question-service");
+const { getModels } = require("../../data-access/models");
 
 const {
   quizRepository,
   userRepository,
   attemptRepository,
+  questionRepository,
 } = require("../../data-access/repositories");
 
 // Constants
@@ -462,66 +464,6 @@ const startQuiz = async (clientId, userId, quizId) => {
   };
 };
 
-const submitQuiz = async (clientId, userId, attemptId, responses) => {
-  validateId(userId, "Invalid user ID.");
-  validateId(attemptId, "Invalid attempt ID.");
-
-  const attempt = await attemptRepository.retrieveAttemptById(clientId, attemptId);
-  if (!attempt || attempt.userId !== userId) {
-    throw new ValidationError("Invalid or non-active attempt.");
-  }
-
-  const quiz = await quizRepository.retrieveQuiz(clientId, attempt.quizId, { fullQuestions: true });
-  if (!quiz) {
-    throw new NotExistError("Quiz not found.");
-  }
-  console.log("Responses:", responses);
-
-  let totalScore = 0;
-
-  const processedResponses = responses.map((response) => {
-    const question = quiz.questions.find(q => q.id === response.questionId);
-    
-    if (!question) {
-      throw new ValidationError(`Question with ID ${response.questionId} not found.`);
-    }
-
-    let score = 0;
-    if (question.type === 'true-false' || question.type === 'multiple-choice') {
-      if (question.answer === response.answer) {
-        score = question.points;
-        totalScore += score;
-      }
-    }
-
-    return {
-      id: response.questionId,
-      question,
-      answer: response.answer,
-      score,
-    };
-  });
-
-  const submittedAt = new Date();
-  await attemptRepository.updateAttempt(clientId, attemptId, {
-    responses: processedResponses,
-    submittedAt,
-    status: AttemptStatus.SUBMITTED,
-    totalScore,
-  });
-
-  return {
-    attempt: {
-      id: attemptId,
-      quiz,
-      startedAt: attempt.startedAt,
-      submittedAt,
-      status: AttemptStatus.SUBMITTED,
-      responses: processedResponses,
-      totalScore,
-    },
-  };
-};
 
 
 module.exports = {
@@ -537,5 +479,4 @@ module.exports = {
   updateQuestion,
   removeQuestion,
   startQuiz,
-  submitQuiz
 };

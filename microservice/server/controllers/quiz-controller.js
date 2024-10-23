@@ -1,6 +1,9 @@
 const asyncHandler = require("express-async-handler");
 
-const { quizService } = require("../../business-logic/services");
+const { 
+  quizService,
+  attemptService, 
+} = require("../../business-logic/services");
 
 const createQuiz = asyncHandler(async (req, res) => {
   const client = req.client;
@@ -203,7 +206,7 @@ const submitQuiz = asyncHandler(async (req, res) => {
   const { userId, attemptId } = req.params;
   const { responses } = req.body; 
 
-  const result = await quizService.submitQuiz(client.id, userId, attemptId, responses);
+  const result = await attemptService.submitQuiz(client.id, userId, attemptId, responses);
 
   res.status(200).json({
     success: true,
@@ -224,5 +227,5 @@ module.exports = {
   updateQuestion,
   removeQuestion,
   startQuiz,
-  submitQuiz
+  submitQuiz,
 };

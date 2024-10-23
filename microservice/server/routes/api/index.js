@@ -34,6 +34,9 @@ router.post(
   quizController.startQuiz
 );
 
-router.post("/v1/users/:userId/attempts/:attemptId/submit", quizController.submitQuiz);
+router.post(
+  "/v1/users/:userId/attempts/:attemptId/submit",
+  quizController.submitQuiz);
+
 
 module.exports = router;
