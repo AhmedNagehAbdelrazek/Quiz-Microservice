@@ -34,4 +34,9 @@ router.post(
   quizController.startQuiz
 );
 
+router.get(
+  "/v1/users/:userId/attempts/:attemptId/analysis",
+  quizController.retrieveAttemptAnalysis
+);
+  
 module.exports = router;
