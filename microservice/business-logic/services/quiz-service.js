@@ -11,11 +11,13 @@ const {
 const { AttemptLimitError, ActiveAttemptError } = require("../errors/attempt");
 
 const questionService = require("../services/question-service");
+const { getModels } = require("../../data-access/models");
 
 const {
   quizRepository,
   userRepository,
   attemptRepository,
+  questionRepository,
 } = require("../../data-access/repositories");
 
 // Constants
@@ -461,6 +463,8 @@ const startQuiz = async (clientId, userId, quizId) => {
     status: attempt.status,
   };
 };
+
+
 
 module.exports = {
   createQuiz,
